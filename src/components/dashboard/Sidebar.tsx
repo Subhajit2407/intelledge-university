@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -13,18 +14,19 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", active: true },
-  { icon: BookOpen, label: "Academics" },
-  { icon: Briefcase, label: "Placements" },
-  { icon: FolderOpen, label: "Resources" },
-  { icon: CheckSquare, label: "Tasks" },
-  { icon: BarChart3, label: "Analytics" },
-  { icon: Calendar, label: "Calendar" },
-  { icon: Bot, label: "AI Copilot" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: BookOpen, label: "Academics", path: "/academics" },
+  { icon: Briefcase, label: "Placements", path: "/placements" },
+  { icon: FolderOpen, label: "Resources", path: "/resources" },
+  { icon: CheckSquare, label: "Tasks", path: "/tasks" },
+  { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: Calendar, label: "Calendar", path: "/calendar" },
+  { icon: Bot, label: "AI Copilot", path: "/ai-copilot" },
 ];
 
 export function Sidebar() {
-  const [active, setActive] = useState("Dashboard");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-card px-4 py-6">
@@ -42,11 +44,11 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 space-y-1">
         {navItems.map((item) => {
-          const isActive = active === item.label;
+          const isActive = location.pathname === item.path;
           return (
             <button
               key={item.label}
-              onClick={() => setActive(item.label)}
+              onClick={() => navigate(item.path)}
               className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isActive
                   ? "gradient-primary text-primary-foreground shadow-primary-glow"
