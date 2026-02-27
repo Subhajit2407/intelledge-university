@@ -11,22 +11,32 @@ import {
   Bot,
   GraduationCap,
   ChevronRight,
+  FileSearch,
+  LogOut,
 } from "lucide-react";
-
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: BookOpen, label: "Academics", path: "/academics" },
-  { icon: Briefcase, label: "Placements", path: "/placements" },
-  { icon: FolderOpen, label: "Resources", path: "/resources" },
-  { icon: CheckSquare, label: "Tasks", path: "/tasks" },
-  { icon: BarChart3, label: "Analytics", path: "/analytics" },
-  { icon: Calendar, label: "Calendar", path: "/calendar" },
-  { icon: Bot, label: "AI Copilot", path: "/ai-copilot" },
-];
+import { logout } from "@/utils/auth";
 
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const role = localStorage.getItem("intelledge_role") || "student";
+
+  const navItems = role === "teacher"
+    ? [
+      { icon: LayoutDashboard, label: "Teacher Dashboard", path: "/" },
+      { icon: BookOpen, label: "Manage Subjects", path: "/academics" },
+      { icon: CheckSquare, label: "Attendance Control", path: "/resources" },
+      { icon: BarChart3, label: "Batch Analytics", path: "/analytics" },
+    ]
+    : [
+      { icon: LayoutDashboard, label: "Student Dashboard", path: "/" },
+      { icon: BookOpen, label: "Academic Vault", path: "/academics" },
+      { icon: Briefcase, label: "Placement Hub", path: "/placements" },
+      { icon: BarChart3, label: "Growth Analytics", path: "/analytics" },
+      { icon: FolderOpen, label: "Study Resources", path: "/resources" },
+      { icon: Bot, label: "AI Copilot", path: "/ai-copilot" },
+      { icon: FileSearch, label: "ATS Checker", path: "/resume-checker" },
+    ];
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-card px-4 py-6">
@@ -49,11 +59,10 @@ export function Sidebar() {
             <button
               key={item.label}
               onClick={() => navigate(item.path)}
-              className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? "gradient-primary text-primary-foreground shadow-primary-glow"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
+              className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive
+                ? "gradient-primary text-primary-foreground shadow-primary-glow"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                }`}
             >
               <item.icon className="h-[18px] w-[18px]" />
               <span>{item.label}</span>
@@ -64,7 +73,7 @@ export function Sidebar() {
       </nav>
 
       {/* Upgrade card */}
-      <div className="mt-4 rounded-2xl bg-accent p-4">
+      <div className="mt-4 rounded-2xl bg-accent p-4 mb-4">
         <div className="mb-2 text-xs font-semibold text-accent-foreground">Upgrade to Pro</div>
         <p className="mb-3 text-[11px] text-muted-foreground leading-relaxed">
           Unlock AI Copilot, advanced analytics & placement intelligence.
@@ -73,6 +82,14 @@ export function Sidebar() {
           Get Pro Access
         </button>
       </div>
+
+      <button
+        onClick={logout}
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all mt-auto"
+      >
+        <LogOut className="h-4 w-4" />
+        <span>Log Out</span>
+      </button>
     </aside>
   );
 }

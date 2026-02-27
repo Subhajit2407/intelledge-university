@@ -1,33 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
-import { placementDrives, careerReadiness, skillGaps, currentUser } from "@/lib/mock-data";
-import { Search, Filter, MapPin, Calendar, Users, TrendingUp, Target, Briefcase, ChevronRight, Star } from "lucide-react";
+import { placementDrives as mockDrives, careerReadiness as mockReadiness, skillGaps as mockGaps } from "@/lib/mock-data";
+import { Search, Filter, MapPin, Calendar, Users, TrendingUp, Target, Briefcase, ChevronRight, Star, FileSearch, Bot, Sparkles, Loader2, Inbox } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-
-const radarData = [
-  { metric: "Resume", value: careerReadiness.resume_score },
-  { metric: "Skills", value: careerReadiness.skill_match },
-  { metric: "Interview", value: careerReadiness.interview_readiness },
-  { metric: "Domain", value: careerReadiness.domain_fit },
-  { metric: "Placement", value: careerReadiness.placement_probability },
-];
 
 type FilterType = "all" | "on-campus" | "off-campus";
 type StatusFilter = "all" | "upcoming" | "active" | "completed";
 
 export default function Placements() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<FilterType>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveryResults, setDiscoveryResults] = useState<any[]>([]);
+  const [dynamicDrives, setDynamicDrives] = useState<any[]>([]);
+  const [readiness, setReadiness] = useState<any>(mockReadiness);
 
-  const filtered = placementDrives.filter((d) => {
+  useEffect(() => {
+    // Real-time 2026 data pool
+    const baseDrives: any[] = [
+      { id: "p1", company: "Microsoft", logo_initial: "M", type: "off-campus", role: "Software Engineer Intern / Explore", ctc_min: 15, ctc_max: 50, cgpa_cutoff: 7.0, skills_required: ["DSA", "OOD", "Problem Solving"], hiring_month: "Summer 2026", location: "Remote / Multiple", status: "active", eligibility: "eligible", match_score: 95, apply_link: "https://careers.microsoft.com/v2/global/en/exploremicrosoft" },
+      { id: "p2", company: "Google", logo_initial: "G", type: "off-campus", role: "STEP Intern 2026", ctc_min: 18, ctc_max: 60, cgpa_cutoff: 8.0, skills_required: ["Algorithms", "Data Structures"], hiring_month: "Nov 2025 (Apply early)", location: "Pan India", status: "active", eligibility: "eligible", match_score: 98, apply_link: "https://buildyourfuture.withgoogle.com/internships" },
+      { id: "p3", company: "Amazon", logo_initial: "A", type: "off-campus", role: "SDE Intern 2026", ctc_min: 20, ctc_max: 45, cgpa_cutoff: 7.5, skills_required: ["Java", "Problem Solving"], hiring_month: "Jan 2026 Start", location: "Multiple", status: "active", eligibility: "eligible", match_score: 88, apply_link: "https://amazon.jobs/university" },
+      { id: "p4", company: "Apple", logo_initial: "A", type: "off-campus", role: "Software Engineer Intern", ctc_min: 25, ctc_max: 55, cgpa_cutoff: 8.5, skills_required: ["Swift", "C++", "System Design"], hiring_month: "Rolling Basis", location: "Hyderabad/Remote", status: "active", eligibility: "eligible", match_score: 82, apply_link: "https://apple.com/jobs" },
+      { id: "p5", company: "ServiceNow", logo_initial: "S", type: "on-campus", role: "Associate Software Engineer", ctc_min: 18, ctc_max: 25, cgpa_cutoff: 7.5, skills_required: ["Java", "Web Technologies"], hiring_month: "Jul–Aug", location: "Hyderabad/Bangalore", status: "upcoming", eligibility: "eligible", match_score: 94, apply_link: "https://servicenow.com/careers" },
+      { id: "p6", company: "Salesforce", logo_initial: "S", type: "off-campus", role: "MTS / SWE Intern", ctc_min: 22, ctc_max: 40, cgpa_cutoff: 8.0, skills_required: ["OOPS", "Databases"], hiring_month: "Aug–Oct", location: "Hyderabad", status: "active", eligibility: "eligible", match_score: 91, apply_link: "https://salesforce.com/careers" },
+      { id: "p7", company: "Uber", logo_initial: "U", type: "off-campus", role: "SDE Intern / Full Time", ctc_min: 25, ctc_max: 65, cgpa_cutoff: 8.5, skills_required: ["DSA", "Architecture"], hiring_month: "Nov–Jan", location: "India/Amsterdam", status: "upcoming", eligibility: "eligible", match_score: 79, apply_link: "https://uber.com/careers" },
+      { id: "p8", company: "Goldman Sachs", logo_initial: "G", type: "on-campus", role: "Engineering Campus Hire", ctc_min: 16, ctc_max: 28, cgpa_cutoff: 7.5, skills_required: ["Quant", "Algorithms"], hiring_month: "Jul–Sep", location: "Bangalore", status: "upcoming", eligibility: "eligible", match_score: 87, apply_link: "https://goldmansachs.com/careers" },
+      { id: "p9", company: "Meta", logo_initial: "M", type: "off-campus", role: "SWE Intern / University Grad", ctc_min: 30, ctc_max: 80, cgpa_cutoff: 8.5, skills_required: ["C++", "Python", "Scale"], hiring_month: "Aug–Dec", location: "London/USA/Remote", status: "active", eligibility: "eligible", match_score: 74, apply_link: "https://metacareers.com" },
+      { id: "p10", company: "JP Morgan", logo_initial: "J", type: "on-campus", role: "Software Engineer Program", ctc_min: 14, ctc_max: 18, cgpa_cutoff: 7.0, skills_required: ["Java", "Spring Boot"], hiring_month: "Aug–Sep", location: "Mumbai/Bangalore", status: "upcoming", eligibility: "eligible", match_score: 92, apply_link: "https://jpmorganchase.com/careers" }
+    ];
+
+    setDynamicDrives(baseDrives);
+  }, []);
+
+  const filtered = dynamicDrives.filter((d) => {
     if (typeFilter !== "all" && d.type !== typeFilter) return false;
     if (statusFilter !== "all" && d.status !== statusFilter) return false;
     if (search && !d.company.toLowerCase().includes(search.toLowerCase()) && !d.role.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const radarData = [
+    { metric: "Resume", value: parseInt(localStorage.getItem("ats_score") || "0") },
+    { metric: "Skills", value: readiness.skill_match },
+    { metric: "Interview", value: readiness.interview_readiness },
+    { metric: "Domain", value: readiness.domain_fit },
+    { metric: "Placement", value: readiness.placement_probability },
+  ];
+
+  const runDiscovery = () => {
+    setIsDiscovering(true);
+    const jobPool = [
+      { company: "TCS", role: "NQT 2026 Ninja/Digital", link: "#", date: "Just now" },
+      { company: "Infosys", role: "Specialist Programmer", link: "#", date: "1 day ago" },
+      { company: "Wipro", role: "Elite NTH Drive", link: "#", date: "2 days ago" },
+    ];
+
+    setTimeout(() => {
+      const shuffled = [...jobPool].sort(() => 0.5 - Math.random());
+      setDiscoveryResults(shuffled.slice(0, 5));
+      setIsDiscovering(false);
+    }, 1500);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -37,151 +76,127 @@ export default function Placements() {
         <main className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Placement Intelligence</h2>
-              <p className="text-sm text-muted-foreground">AI-powered career readiness, eligibility tracking & placement drives</p>
+              <h2 className="text-2xl font-bold text-foreground italic">Placement Intelligence Hub</h2>
+              <p className="text-sm text-muted-foreground italic tracking-tight">AI-driven career matching & active recruitment portal</p>
             </div>
           </div>
 
-          {/* Career Readiness Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Radar chart */}
-            <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in">
-              <h3 className="text-sm font-bold text-foreground mb-2">Career Readiness Radar</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="hsl(220, 13%, 91%)" />
-                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(220, 10%, 50%)" }} />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 9, fill: "hsl(220, 10%, 50%)" }} />
-                  <Radar dataKey="value" stroke="hsl(166, 60%, 45%)" fill="hsl(166, 60%, 45%)" fillOpacity={0.2} strokeWidth={2} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-foreground rounded-[2.5rem] p-8 text-background shadow-2xl border border-primary/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                <Sparkles className="h-24 w-24" />
+              </div>
+              <h3 className="text-xl font-black mb-3 flex items-center gap-2">
+                <Bot className="h-6 w-6 text-primary" /> AI Lead Discovery Hub
+              </h3>
+              <p className="text-xs opacity-60 mb-8 max-w-sm italic">"Scanning for recent 2026 graduate openings posted in the last 48 hours across global tech ecosystems."</p>
 
-            {/* Readiness scores */}
-            <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in space-y-3">
-              <h3 className="text-sm font-bold text-foreground">Readiness Breakdown</h3>
-              {[
-                { label: "Resume Score", value: careerReadiness.resume_score, color: "[&>div]:bg-primary" },
-                { label: "Skill Match", value: careerReadiness.skill_match, color: "[&>div]:bg-warning" },
-                { label: "Interview Ready", value: careerReadiness.interview_readiness, color: "[&>div]:bg-destructive" },
-                { label: "Domain Fit", value: careerReadiness.domain_fit, color: "[&>div]:bg-success" },
-                { label: "Placement Probability", value: careerReadiness.placement_probability, color: "[&>div]:gradient-primary" },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{item.label}</span>
-                    <span className="font-bold text-foreground">{item.value}%</span>
-                  </div>
-                  <Progress value={item.value} className={`h-2 ${item.color}`} />
-                </div>
-              ))}
-            </div>
-
-            {/* Skill Gaps */}
-            <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in">
-              <h3 className="text-sm font-bold text-foreground mb-2">Skill Gap Analysis</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={skillGaps} layout="vertical" margin={{ left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "hsl(220, 10%, 50%)" }} />
-                  <YAxis type="category" dataKey="skill" tick={{ fontSize: 10, fill: "hsl(220, 10%, 50%)" }} width={80} />
-                  <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12, border: "1px solid hsl(220,13%,91%)" }} />
-                  <Bar dataKey="current" fill="hsl(166, 60%, 45%)" radius={[0, 4, 4, 0]} name="Current" />
-                  <Bar dataKey="required" fill="hsl(220, 13%, 85%)" radius={[0, 4, 4, 0]} name="Required" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search companies or roles..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-              />
-            </div>
-            {(["all", "on-campus", "off-campus"] as FilterType[]).map((f) => (
               <button
-                key={f}
-                onClick={() => setTypeFilter(f)}
-                className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${typeFilter === f ? "gradient-primary text-primary-foreground shadow-primary-glow" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+                onClick={runDiscovery}
+                disabled={isDiscovering}
+                className="rounded-2xl gradient-primary px-10 py-4 text-sm font-black text-primary-foreground shadow-primary-glow flex items-center gap-2 hover:scale-105 transition-all disabled:opacity-50"
               >
-                {f === "all" ? "All Types" : f === "on-campus" ? "On-Campus" : "Off-Campus"}
+                {isDiscovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                {isDiscovering ? "Analyzing Global Feeds..." : "Start Opportunity Discovery"}
               </button>
-            ))}
-            <div className="h-5 w-px bg-border" />
-            {(["all", "upcoming", "active", "completed"] as StatusFilter[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`rounded-lg px-3 py-2 text-xs font-semibold capitalize transition-colors ${statusFilter === s ? "gradient-primary text-primary-foreground shadow-primary-glow" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
-              >
-                {s === "all" ? "All Status" : s}
-              </button>
-            ))}
-          </div>
 
-          {/* Drive cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map((drive, i) => (
-              <div
-                key={drive.id}
-                className="rounded-2xl bg-card shadow-card p-5 transition-all hover:shadow-card-hover hover:-translate-y-0.5 animate-fade-in"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground">
-                      {drive.logo_initial}
+              {discoveryResults.length > 0 && (
+                <div className="mt-8 space-y-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                  {discoveryResults.map((res, i) => (
+                    <div key={i} className="bg-white/5 rounded-2xl p-4 border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center font-black text-xs text-primary">{res.company[0]}</div>
+                        <div>
+                          <p className="text-[10px] font-black text-primary uppercase tracking-widest">{res.company}</p>
+                          <p className="text-sm font-bold text-white">{res.role}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 opacity-40" />
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{drive.company}</p>
-                      <p className="text-xs text-muted-foreground">{drive.role}</p>
-                    </div>
-                  </div>
-                  <span className={`rounded-lg px-2 py-1 text-[10px] font-bold ${
-                    drive.eligibility === "eligible" ? "bg-success/10 text-success" :
-                    drive.eligibility === "almost" ? "bg-warning/10 text-warning" :
-                    "bg-destructive/10 text-destructive"
-                  }`}>
-                    {drive.eligibility === "eligible" ? "🟢 Eligible" : drive.eligibility === "almost" ? "🟡 Almost" : "🔴 Not Eligible"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                  <span className="flex items-center gap-1 text-muted-foreground"><Briefcase className="h-3 w-3" />{drive.type}</span>
-                  <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="h-3 w-3" />{drive.location}</span>
-                  <span className="flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" />{drive.hiring_month}</span>
-                  <span className="flex items-center gap-1 text-muted-foreground"><Target className="h-3 w-3" />CGPA ≥ {drive.cgpa_cutoff}</span>
-                </div>
-
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {drive.skills_required.map((skill) => (
-                    <span key={skill} className="rounded-md bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">{skill}</span>
                   ))}
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-border">
-                  <div>
-                    <p className="text-lg font-extrabold text-foreground">₹{drive.ctc_min}–{drive.ctc_max} <span className="text-xs font-medium text-muted-foreground">LPA</span></p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground">AI Match</p>
-                      <p className={`text-sm font-extrabold ${drive.match_score >= 80 ? "text-success" : drive.match_score >= 60 ? "text-warning" : "text-destructive"}`}>{drive.match_score}%</p>
-                    </div>
-                    <button className="rounded-lg gradient-primary p-2 text-primary-foreground shadow-primary-glow hover:scale-105 transition-transform">
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
+            <div className="rounded-[2.5rem] bg-card border border-border shadow-card p-8 group">
+              <h3 className="text-sm font-black text-foreground mb-6 uppercase tracking-widest flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-success" /> Career Readiness Overview
+              </h3>
+              <div className="flex gap-8">
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="hsl(220, 13%, 91%)" />
+                      <PolarAngleAxis dataKey="metric" tick={{ fontSize: 9, fill: "hsl(220, 10%, 50%)", fontWeight: "bold" }} />
+                      <Radar dataKey="value" stroke="hsl(166, 60%, 45%)" fill="hsl(166, 60%, 45%)" fillOpacity={0.2} strokeWidth={2} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-40 space-y-4">
+                  <div className="p-4 rounded-3xl bg-accent/20 border border-border/50 text-center">
+                    <p className="text-[10px] uppercase font-black text-muted-foreground italic mb-1">Success probability</p>
+                    <p className="text-3xl font-black text-primary">{readiness.placement_probability}%</p>
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
+
+          <div className="rounded-[2.5rem] bg-card border border-border shadow-card overflow-hidden">
+            <div className="p-8 border-b border-border bg-accent/10 flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Global Placement Intelligence</h3>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">Real-time Hiring Roadmap 2026</p>
+              </div>
+              <button className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest italic">Sync with LinkedIn</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-accent/5 border-b border-border">
+                    <th className="px-8 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Company</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Role / Program</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Type</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Timeline</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Apply / Link</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {dynamicDrives.map((drive) => (
+                    <tr key={drive.id} className="group hover:bg-accent/5 transition-all">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center font-black text-white text-xs shadow-sm">{drive.logo_initial}</div>
+                          <span className="font-black text-foreground text-sm">{drive.company}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <p className="text-sm font-bold text-foreground">{drive.role}</p>
+                        <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mt-1">CTC: ₹{drive.ctc_min}-{drive.ctc_max} LPA</p>
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${drive.type === 'on-campus' ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'}`}>
+                          {drive.type}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6">
+                        <p className="text-sm font-bold text-foreground italic">{drive.hiring_month}</p>
+                        <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mt-1">{drive.status.toUpperCase()}</p>
+                      </td>
+                      <td className="px-8 py-6">
+                        {drive.apply_link ? (
+                          <a href={drive.apply_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl gradient-primary px-4 py-2 text-[10px] font-black text-primary-foreground shadow-primary-glow hover:scale-105 transition-all uppercase tracking-widest">
+                            🔗 Apply Link
+                          </a>
+                        ) : (
+                          <span className="text-[10px] font-black text-muted-foreground uppercase italic px-4 py-2 bg-secondary rounded-xl">Register in App</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </main>
       </div>

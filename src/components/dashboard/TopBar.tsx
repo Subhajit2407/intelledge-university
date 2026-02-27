@@ -1,6 +1,11 @@
 import { Search, Bell, MessageSquare } from "lucide-react";
 
 export function TopBar() {
+  const role = localStorage.getItem("intelledge_role") || "student";
+  const studentData = JSON.parse(localStorage.getItem("student_profile_data") || '{"name": "User", "semester": "N/A"}');
+  const displayName = role === "teacher" ? "Faculty Member" : studentData.name;
+  const displayRole = role === "teacher" ? "Academic Dept." : `Semester ${studentData.semester}`;
+
   return (
     <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4">
       {/* Search */}
@@ -17,8 +22,8 @@ export function TopBar() {
       <div className="flex items-center gap-4">
         <button className="relative rounded-xl bg-secondary p-2.5 text-muted-foreground transition-colors hover:text-foreground">
           <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-            3
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white shadow-primary-glow">
+            0
           </span>
         </button>
         <button className="rounded-xl bg-secondary p-2.5 text-muted-foreground transition-colors hover:text-foreground">
@@ -26,13 +31,13 @@ export function TopBar() {
         </button>
 
         {/* Profile */}
-        <div className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2">
-          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-            AS
+        <div className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2 border border-border/50 shadow-sm">
+          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center text-[10px] font-black text-white shadow-primary-glow">
+            {displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Arjun S.</p>
-            <p className="text-[10px] text-muted-foreground">B.Tech CSE</p>
+            <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{displayName}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{displayRole}</p>
           </div>
         </div>
       </div>

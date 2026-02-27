@@ -1,4 +1,5 @@
 import { Clock, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const tasks = [
   {
@@ -22,12 +23,14 @@ const tasks = [
 ];
 
 export function UpcomingTasks() {
+  const navigate = useNavigate();
+
   return (
     <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in" style={{ animationDelay: "300ms" }}>
       <h3 className="text-sm font-bold text-foreground mb-4">Upcoming Tasks</h3>
       <div className="space-y-3">
         {tasks.map((task) => (
-          <div key={task.title} className="flex items-start gap-3 group cursor-pointer">
+          <div key={task.title} className="flex items-start gap-3 group cursor-pointer" onClick={() => navigate("/projects")}>
             <div className={`mt-0.5 h-2 w-2 rounded-full ${task.color} shrink-0`} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
@@ -42,7 +45,10 @@ export function UpcomingTasks() {
           </div>
         ))}
       </div>
-      <button className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+      <button
+        onClick={() => navigate("/projects")}
+        className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+      >
         See All <ArrowRight className="h-3 w-3" />
       </button>
     </div>
