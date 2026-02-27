@@ -15,6 +15,8 @@ import AICopilot from "./pages/AICopilot";
 import ResumeChecker from "./pages/ResumeChecker";
 import { AIVoiceOrb } from "./components/dashboard/AIVoiceOrb";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import Landing from "./pages/Landing";
 import { useEffect, useState } from "react";
 import { logout } from "./utils/auth";
 
@@ -34,7 +36,8 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Gatekeeper><Index /></Gatekeeper>} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/dashboard" element={<Gatekeeper><Index /></Gatekeeper>} />
             <Route path="/academics" element={<Gatekeeper><Academics /></Gatekeeper>} />
             <Route path="/placements" element={<Gatekeeper><Placements /></Gatekeeper>} />
             <Route path="/calendar" element={<Gatekeeper><CalendarPage /></Gatekeeper>} />
@@ -43,6 +46,7 @@ const App = () => {
             <Route path="/analytics" element={<Gatekeeper><Analytics /></Gatekeeper>} />
             <Route path="/ai-copilot" element={<Gatekeeper><AICopilot /></Gatekeeper>} />
             <Route path="/resume-checker" element={<Gatekeeper><ResumeChecker /></Gatekeeper>} />
+            <Route path="/profile" element={<Gatekeeper><Profile /></Gatekeeper>} />
             <Route path="*" element={<LogOutRedirect />} />
           </Routes>
           <AIVoiceOrb />

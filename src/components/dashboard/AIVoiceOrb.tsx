@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Mic, MicOff, MessageSquare, X, Languages, Sparkles, TrendingUp, AlertTriangle, Calendar, Target, Volume2, Bot } from "lucide-react";
 
 type OrbMode = "idle" | "listening" | "processing" | "speaking" | "briefing";
@@ -15,6 +15,7 @@ export function AIVoiceOrb() {
     const [message, setMessage] = useState("");
     const [isQuietMode, setIsQuietMode] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Translations / Localized Content
@@ -143,25 +144,77 @@ export function AIVoiceOrb() {
     const processVoiceCommand = (text: string) => {
         setMode("processing");
         const lower = text.toLowerCase();
+        const navigateTo = (path: string) => {
+            navigate(path);
+            setIsOpen(false);
+        };
 
         setTimer(1200, () => {
             let response = "";
+
+            // Language switching via voice
+            if (lower.includes("english") || lower.includes("ಇಂಗ್ಲಿಷ್") || lower.includes("अंग्रेजी")) {
+                setLang("en");
+                response = "Switched to English.";
+            } else if (lower.includes("kannada") || lower.includes("ಕನ್ನಡ") || lower.includes("ಕನ್ನಡಕ್ಕೆ")) {
+                setLang("kn");
+                response = "ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.";
+            } else if (lower.includes("hindi") || lower.includes("ಹಿಂದಿ") || lower.includes("हिंदी")) {
+                setLang("hi");
+                response = "हिंदी में बदल दिया गया है।";
+            }
+
+            if (response) {
+                setMessage(response);
+                speak(response);
+                return;
+            }
+
             if (lang === "kn") {
                 if (lower.includes("ಹಾಜರಾತಿ") || lower.includes("ಅಟೆಂಡೆನ್ಸ್")) response = currentContent.atRisk;
-                else if (lower.includes("ಪ್ಲೇಸ್ಮೆಂಟ್") || lower.includes("ಕೆಲಸ")) response = currentContent.placement;
-                else if (lower.includes("ಹಲೋ") || lower.includes("ನಮಸ್ಕಾರ")) response = "ನಮಸ್ಕಾರ! ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಕೇಳಿ.";
-                else response = "ಕ್ಷಮಿಸಿ, ಈ ವಿಷಯದ ಬಗ್ಗೆ ನನಗೆ ಮಾಹಿತಿ ಇಲ್ಲ. ದಯವಿಟ್ಟು ಹಾಜರಾತಿ ಅಥವಾ ಪ್ಲೇಸ್ಮೆಂಟ್ ಬಗ್ಗೆ ಕೇಳಿ.";
+                else if (lower.includes("ಪ್ಲೇಸ್ಮೆಂಟ್") || lower.includes("ಕೆಲಸ") || lower.includes("ನೌಕರಿ")) response = currentContent.placement;
+                else if (lower.includes("ಪ್ರಾಜೆಕ್ಟ್") || lower.includes("ಪ್ರೊಜೆಕ್ಟ್")) {
+                    response = "ನಿಮ್ಮ ಪ್ರಾಜೆಕ್ಟ್ ಪುಟಕ್ಕೆ ಕರೆದೊಯ್ಯುತ್ತಿದ್ದೇನೆ.";
+                    navigateTo("/projects");
+                } else if (lower.includes("ವರದಿ") || lower.includes("ಅನಾಲಿಟಿಕ್ಸ್")) {
+                    response = "ನಿಮ್ಮ ಪ್ರಗತಿಯ ವರದಿಯನ್ನು ತೋರಿಸುತ್ತಿದ್ದೇನೆ.";
+                    navigateTo("/analytics");
+                } else if (lower.includes("ಪ್ರೊಫೈಲ್") || lower.includes("ನನ್ನ ಮಾಹಿತಿ")) {
+                    response = "ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಪುಟ ಇಲ್ಲಿದೆ.";
+                    navigateTo("/profile");
+                } else if (lower.includes("ಹಲೋ") || lower.includes("ನಮಸ್ಕಾರ")) response = "ನಮಸ್ಕಾರ! ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?";
+                else response = "ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಹಾಜರಾತಿ, ಪ್ಲೇಸ್ಮೆಂಟ್ ಅಥವಾ ಪ್ರಾಜೆಕ್ಟ್ ಬಗ್ಗೆ ಕೇಳಿ.";
             } else if (lang === "hi") {
                 if (lower.includes("उपस्थिति") || lower.includes("अटेंडेंस")) response = currentContent.atRisk;
                 else if (lower.includes("प्लेसमेंट") || lower.includes("नौकरी")) response = currentContent.placement;
-                else if (lower.includes("नमस्ते") || lower.includes("हेलो")) response = "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ?";
-                else response = "क्षमा करें, मुझे इस बारे में जानकारी नहीं है। कृपया उपस्थिति या प्लेसमेंट के बारे में पूछें।";
+                else if (lower.includes("प्रोजेक्ट")) {
+                    response = "मैं आपको प्रोजेक्ट पेज पर ले जा रहा हूँ।";
+                    navigateTo("/projects");
+                } else if (lower.includes("रिपोर्ट") || lower.includes("एनालिटिक्स")) {
+                    response = "आपकी प्रगति रिपोर्ट यहाँ है।";
+                    navigateTo("/analytics");
+                } else if (lower.includes("प्रोफाइल")) {
+                    response = "आपकी प्रोफाइल खोली जा रही है।";
+                    navigateTo("/profile");
+                } else if (lower.includes("नमस्ते") || lower.includes("हेलो")) response = "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ?";
+                else response = "क्षमा करें, मुझे समझ नहीं आया। कृपया उपस्थिति, प्लेसमेंट या प्रोजेक्ट के बारे में पूछें।";
             } else {
                 if (lower.includes("attendance") || lower.includes("low")) response = currentContent.atRisk;
                 else if (lower.includes("placement") || lower.includes("job") || lower.includes("hiring")) response = currentContent.placement;
-                else if (lower.includes("cgpa") || lower.includes("marks") || lower.includes("grade")) response = `Your current CGPA is projected at 7.8. Stay focused on your upcoming internal exams.`;
-                else if (lower.includes("assignment") || lower.includes("tasks")) response = currentContent.briefing;
-                else response = "I'm your IntellEdge assistant. I can help with your academics, attendance records, and placement opportunities.";
+                else if (lower.includes("project") || lower.includes("repo")) {
+                    response = "Opening your project vault.";
+                    navigateTo("/projects");
+                } else if (lower.includes("analytics") || lower.includes("growth") || lower.includes("report")) {
+                    response = "Synchronizing with your growth analytics.";
+                    navigateTo("/analytics");
+                } else if (lower.includes("profile") || lower.includes("account") || lower.includes("edit")) {
+                    response = "Accessing your intelligence profile.";
+                    navigateTo("/profile");
+                } else if (lower.includes("dashboard") || lower.includes("home")) {
+                    response = "Returning to main dashboard.";
+                    navigateTo("/dashboard");
+                } else if (lower.includes("cgpa") || lower.includes("marks")) response = `Your current CGPA is projected at 7.8. Stay focused.`;
+                else response = "I can navigate to projects, analytics, profile, or tell you about attendance and placements.";
             }
 
             setMessage(response);

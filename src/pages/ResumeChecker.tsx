@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { FileText, Upload, CheckCircle2, AlertCircle, TrendingUp, Search, X, Loader2, Sparkles, Target, Briefcase, ChevronRight, MessageSquareCode, Bot } from "lucide-react";
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 interface ATSRequirement {
@@ -59,16 +60,30 @@ export default function ResumeChecker() {
         setIsAnalyzing(true);
         setScore(null);
 
-        // Deterministic proficiency logic: Score based on unique file properties
-        // (name length + size + last modified)
+        // Advanced AI Parsing Simulation
         setTimeout(() => {
+            const nameLower = file.name.toLowerCase();
+            const sizeInKB = file.size / 1024;
+
+            let baseScore = 65;
+
+            // Heuristic Parsing Logic
+            if (nameLower.includes("specialist") || nameLower.includes("senior")) baseScore += 10;
+            if (nameLower.includes("standard") || nameLower.includes("ats")) baseScore += 5;
+            if (sizeInKB > 100 && sizeInKB < 500) baseScore += 10; // Ideal size range
+            if (sizeInKB > 1000) baseScore -= 15; // Too large for parsers
+
+            // Random jitter for "live" feel
+            const finalScore = Math.min(98, Math.max(35, baseScore + (Math.floor(Math.random() * 15) - 5)));
+
             setIsAnalyzing(false);
-            const combinedVal = file.name.length + (file.size % 100) + (file.lastModified % 50);
-            // Map to a realistic range 55-94
-            const finalScore = 55 + (combinedVal % 40);
             setScore(finalScore);
             localStorage.setItem("ats_score", finalScore.toString());
-        }, 2800);
+
+            toast.success("Analysis Complete", {
+                description: `Neural engine matched your profile with a ${finalScore}% accuracy rating.`
+            });
+        }, 3500);
     };
 
     const getScoreStatus = (s: number) => {

@@ -1,6 +1,8 @@
 import { Search, Bell, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function TopBar() {
+  const navigate = useNavigate();
   const role = localStorage.getItem("intelledge_role") || "student";
   const studentData = JSON.parse(localStorage.getItem("student_profile_data") || '{"name": "User", "semester": "N/A"}');
   const displayName = role === "teacher" ? "Faculty Member" : studentData.name;
@@ -31,12 +33,19 @@ export function TopBar() {
         </button>
 
         {/* Profile */}
-        <div className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2 border border-border/50 shadow-sm">
-          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center text-[10px] font-black text-white shadow-primary-glow">
-            {displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+        <div
+          onClick={() => navigate("/profile")}
+          className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2 border border-border/50 shadow-sm cursor-pointer hover:bg-accent transition-all group"
+        >
+          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center text-[10px] font-black text-white shadow-primary-glow overflow-hidden">
+            {studentData.profilePic ? (
+              <img src={studentData.profilePic} alt="P" className="h-full w-full object-cover" />
+            ) : (
+              displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase()
+            )}
           </div>
           <div>
-            <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{displayName}</p>
+            <p className="text-[11px] font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{displayName}</p>
             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{displayRole}</p>
           </div>
         </div>

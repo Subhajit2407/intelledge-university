@@ -7,7 +7,10 @@ import { CourseCards } from "@/components/dashboard/CourseCards";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
-import { User, GraduationCap, Upload, Save, UserCheck, Database, Plus, Trash2, Edit2 } from "lucide-react";
+import { User, GraduationCap, Upload, Save, UserCheck, Database, Plus, Trash2, Edit2, Bell, BookOpen, AlertCircle, Send, CheckCircle2, Sparkles } from "lucide-react";
+import IntellEdgeDB, { TeacherRecord } from "@/lib/db";
+import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 
 export default function Index() {
   const [role, setRole] = useState<string | null>(null);
@@ -15,44 +18,81 @@ export default function Index() {
   const [studentData, setStudentData] = useState<any>(null);
   const [teacherRecords, setTeacherRecords] = useState<any[]>([]);
 
-  useEffect(() => {
+  const [selectedForVault, setSelectedForVault] = useState<TeacherRecord | null>(null);
+  const [alertTarget, setAlertTarget] = useState<string>("ALL");
+  const [alertMessage, setAlertMessage] = useState("");
+
+  const loadData = async () => {
+    const records = await IntellEdgeDB.getRecords();
+    setTeacherRecords(records);
+
     const savedRole = localStorage.getItem("intelledge_role");
     setRole(savedRole);
 
     const savedSetup = localStorage.getItem("student_setup_complete");
     setIsSetupComplete(savedSetup === "true");
 
-    const savedRecords = localStorage.getItem("teacher_student_records");
-    if (savedRecords) setTeacherRecords(JSON.parse(savedRecords));
-
     const savedStudent = localStorage.getItem("student_profile_data");
     if (savedStudent) setStudentData(JSON.parse(savedStudent));
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
+
+  const handleTeacherUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData) as any;
+    await IntellEdgeDB.addRecord(data);
+    toast.success("Student Synchronized", { description: `${data.name} is now in the master ledger.` });
+    loadData();
+    (e.target as HTMLFormElement).reset();
+  };
+
+  const deleteRecord = async (id: string) => {
+    await IntellEdgeDB.deleteRecord(id);
+    toast.error("Record Purged");
+    loadData();
+  };
+
+  const handleSendAlert = async () => {
+    if (!alertMessage) return;
+    await IntellEdgeDB.sendAlert({
+      title: "Faculty Alert",
+      message: alertMessage,
+      type: "warning",
+      studentId: alertTarget
+    });
+    toast.success("Alert Broadcasted", { description: alertTarget === "ALL" ? "Sent to entire batch." : `Sent to ${alertTarget}.` });
+    setAlertMessage("");
+  };
+
+  const handleAddSubject = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedForVault) return;
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData) as any;
+    await IntellEdgeDB.addSubject(selectedForVault.id, {
+      ...data,
+      totalClasses: parseInt(data.totalClasses),
+      attendedClasses: parseInt(data.attendedClasses),
+      credits: parseInt(data.credits)
+    });
+    toast.success("Subject Added to Vault");
+    loadData();
+    (e.target as HTMLFormElement).reset();
+  };
 
   const handleStudentSetup = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData);
-    localStorage.setItem("student_profile_data", JSON.stringify(data));
+    const finalData = { ...data, profilePic: studentData?.profilePic };
+    localStorage.setItem("student_profile_data", JSON.stringify(finalData));
     localStorage.setItem("student_setup_complete", "true");
     setIsSetupComplete(true);
-    setStudentData(data);
-  };
-
-  const handleTeacherUpload = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData);
-    const newRecords = [...teacherRecords, { ...data, id: Date.now().toString() }];
-    setTeacherRecords(newRecords);
-    localStorage.setItem("teacher_student_records", JSON.stringify(newRecords));
-    (e.target as HTMLFormElement).reset();
-  };
-
-  const deleteRecord = (id: string) => {
-    const filtered = teacherRecords.filter(r => r.id !== id);
-    setTeacherRecords(filtered);
-    localStorage.setItem("teacher_student_records", JSON.stringify(filtered));
+    setStudentData(finalData);
   };
 
   if (role === "teacher") {
@@ -126,6 +166,35 @@ export default function Index() {
                     <Save className="h-4 w-4" /> Sync Record to Cloud
                   </button>
                 </form>
+
+                {/* Broadcast Alerts */}
+                <div className="mt-8 pt-8 border-t border-border">
+                  <h3 className="text-[10px] font-black mb-4 flex items-center gap-2 uppercase tracking-[0.2em] text-muted-foreground italic">
+                    <Bell className="h-3 w-3" /> Neural Broadcast
+                  </h3>
+                  <div className="space-y-3">
+                    <select
+                      value={alertTarget}
+                      onChange={(e) => setAlertTarget(e.target.value)}
+                      className="w-full rounded-xl bg-background border border-border px-4 py-2 text-[10px] font-bold outline-none"
+                    >
+                      <option value="ALL">Entire Batch 2026</option>
+                      {teacherRecords.map(r => <option key={r.id} value={r.roll}>{r.name} ({r.roll})</option>)}
+                    </select>
+                    <textarea
+                      value={alertMessage}
+                      onChange={(e) => setAlertMessage(e.target.value)}
+                      placeholder="Enter urgent notification message..."
+                      className="w-full rounded-xl bg-background border border-border p-4 text-xs font-medium outline-none min-h-[100px] resize-none focus:ring-2 focus:ring-primary/10"
+                    />
+                    <button
+                      onClick={handleSendAlert}
+                      className="w-full rounded-xl bg-foreground text-background py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors"
+                    >
+                      <Send className="h-3 w-3" /> Transmit Alert
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="lg:col-span-2 rounded-[2.5rem] bg-card border border-border shadow-card overflow-hidden flex flex-col">
@@ -145,32 +214,91 @@ export default function Index() {
                   ) : (
                     <div className="divide-y divide-border">
                       {teacherRecords.map(record => (
-                        <div key={record.id} className="p-6 flex items-center justify-between hover:bg-accent/10 transition-all group">
-                          <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg shadow-sm group-hover:scale-110 transition-transform">{record.name[0]}</div>
-                            <div>
-                              <p className="font-black text-foreground text-sm tracking-tight">{record.name}</p>
-                              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.1em] italic opacity-60">ID: {record.roll} • SEMESTER {record.semester}</p>
+                        <div key={record.id} className="p-6 flex flex-col gap-4 hover:bg-accent/5 transition-all group">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg shadow-sm group-hover:scale-110 transition-transform">{record.name[0]}</div>
+                              <div>
+                                <p className="font-black text-foreground text-sm tracking-tight">{record.name}</p>
+                                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.1em] italic opacity-60">ID: {record.roll} • SEMESTER {record.semester}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-8">
+                              <div className="text-center min-w-[60px]">
+                                <p className="text-[9px] font-black text-muted-foreground uppercase opacity-40 mb-1">Academic</p>
+                                <p className="text-sm font-black text-foreground">{record.score} <span className="text-[10px] opacity-40">GPA</span></p>
+                              </div>
+                              <div className="text-center min-w-[80px]">
+                                <p className="text-[9px] font-black text-muted-foreground uppercase opacity-40 mb-1">Attendance</p>
+                                <p className={`text-sm font-black ${parseInt(record.attendance) < 75 ? 'text-destructive' : 'text-success'}`}>{record.attendance}%</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setSelectedForVault(selectedForVault?.id === record.id ? null : record)}
+                                  className={`p-2.5 rounded-xl transition-all ${selectedForVault?.id === record.id ? 'bg-primary text-white shadow-primary-glow' : 'bg-accent text-muted-foreground hover:text-primary'}`}
+                                >
+                                  <BookOpen className="h-3.5 w-3.5" />
+                                </button>
+                                <button onClick={() => deleteRecord(record.id)} className="p-2.5 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-10">
-                            <div className="text-center min-w-[60px]">
-                              <p className="text-[9px] font-black text-muted-foreground uppercase opacity-40 mb-1">Academic</p>
-                              <p className="text-sm font-black text-foreground">{record.score} <span className="text-[10px] opacity-40">GPA</span></p>
+
+                          {/* Academic Vault Expandable */}
+                          {selectedForVault?.id === record.id && (
+                            <div className="mt-4 p-6 bg-accent/20 rounded-[2rem] border border-border/50 animate-in slide-in-from-top-4 duration-500">
+                              <div className="flex items-center justify-between mb-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                  <Sparkles className="h-3 w-3" /> Academic Intelligence Vault
+                                </h4>
+                                <span className="text-[10px] font-bold text-muted-foreground italic">Managing records for {record.name}</span>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                  <p className="text-[10px] font-black uppercase text-muted-foreground border-b border-border pb-2">Active Subjects</p>
+                                  {(record.subjects || []).length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic py-4">No subjects injected into vault.</p>
+                                  ) : (
+                                    <div className="space-y-3">
+                                      {record.subjects?.map(s => (
+                                        <div key={s.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm flex items-center justify-between">
+                                          <div>
+                                            <p className="text-xs font-black text-foreground">{s.name}</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase font-bold">{s.code} · {s.credits} Credits</p>
+                                          </div>
+                                          <div className="text-right">
+                                            <p className="text-xs font-black text-primary">{Math.round((s.attendedClasses / s.totalClasses) * 100)}%</p>
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Attendance</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="bg-card p-6 rounded-[2rem] border border-border shadow-sm">
+                                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-4">Inject New Subject Data</p>
+                                  <form onSubmit={handleAddSubject} className="space-y-4">
+                                    <input name="name" required placeholder="Subject Name" className="w-full rounded-xl bg-accent/50 border border-border px-4 py-2.5 text-xs font-bold outline-none" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <input name="code" required placeholder="Code" className="w-full rounded-xl bg-accent/50 border border-border px-4 py-2.5 text-xs font-bold outline-none" />
+                                      <input name="credits" type="number" required placeholder="Credits" className="w-full rounded-xl bg-accent/50 border border-border px-4 py-2.5 text-xs font-bold outline-none" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <input name="totalClasses" type="number" required placeholder="Total Classes" className="w-full rounded-xl bg-accent/50 border border-border px-4 py-2.5 text-xs font-bold outline-none" />
+                                      <input name="attendedClasses" type="number" required placeholder="Attended" className="w-full rounded-xl bg-accent/50 border border-border px-4 py-2.5 text-xs font-bold outline-none" />
+                                    </div>
+                                    <button className="w-full rounded-xl bg-[#0D2B1D] text-white py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">
+                                      <Plus className="h-3 w-3" /> Commit Subject
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-center min-w-[80px]">
-                              <p className="text-[9px] font-black text-muted-foreground uppercase opacity-40 mb-1">Attendance</p>
-                              <p className={`text-sm font-black ${parseInt(record.attendance) < 75 ? 'text-destructive' : 'text-success'}`}>{record.attendance}%</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button className="p-2.5 rounded-xl bg-accent text-muted-foreground hover:text-primary transition-colors">
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </button>
-                              <button onClick={() => deleteRecord(record.id)} className="p-2.5 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all">
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -203,10 +331,28 @@ export default function Index() {
               <form onSubmit={handleStudentSetup} className="bg-card border border-border rounded-[3rem] p-10 shadow-2xl space-y-8">
                 <div className="flex flex-col items-center">
                   <div className="relative group cursor-pointer">
-                    <div className="h-24 w-24 rounded-full bg-accent border-2 border-dashed border-primary/30 flex items-center justify-center overflow-hidden group-hover:border-primary transition-colors">
-                      <Upload className="h-8 w-8 text-primary/50 group-hover:text-primary animate-bounce" />
+                    <div className="h-24 w-24 rounded-[1.5rem] bg-accent border-2 border-dashed border-primary/30 flex items-center justify-center overflow-hidden group-hover:border-primary transition-colors">
+                      {studentData?.profilePic ? (
+                        <img src={studentData.profilePic} className="h-full w-full object-cover" />
+                      ) : (
+                        <Upload className="h-8 w-8 text-primary/50 group-hover:text-primary animate-bounce" />
+                      )}
                     </div>
-                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+                    <input
+                      type="file"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setStudentData({ ...studentData, profilePic: reader.result });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
                     <div className="absolute -bottom-1 -right-1 bg-foreground text-background p-1.5 rounded-full shadow-lg">
                       <Save className="h-3 w-3" />
                     </div>

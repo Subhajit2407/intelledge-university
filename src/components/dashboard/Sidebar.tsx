@@ -23,15 +23,17 @@ export function Sidebar() {
 
   const navItems = role === "teacher"
     ? [
-      { icon: LayoutDashboard, label: "Teacher Dashboard", path: "/" },
+      { icon: LayoutDashboard, label: "Teacher Dashboard", path: "/dashboard" },
       { icon: BookOpen, label: "Manage Subjects", path: "/academics" },
+      { icon: FolderOpen, label: "Project Repos", path: "/projects" },
       { icon: CheckSquare, label: "Attendance Control", path: "/resources" },
       { icon: BarChart3, label: "Batch Analytics", path: "/analytics" },
     ]
     : [
-      { icon: LayoutDashboard, label: "Student Dashboard", path: "/" },
+      { icon: LayoutDashboard, label: "Student Dashboard", path: "/dashboard" },
       { icon: BookOpen, label: "Academic Vault", path: "/academics" },
       { icon: Briefcase, label: "Placement Hub", path: "/placements" },
+      { icon: FolderOpen, label: "Project Vault", path: "/projects" },
       { icon: BarChart3, label: "Growth Analytics", path: "/analytics" },
       { icon: FolderOpen, label: "Study Resources", path: "/resources" },
       { icon: Bot, label: "AI Copilot", path: "/ai-copilot" },

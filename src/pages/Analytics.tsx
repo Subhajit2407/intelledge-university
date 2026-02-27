@@ -20,7 +20,7 @@ const ContributionGrid = () => {
   const days = 140; // 20 weeks
   const data = Array.from({ length: days }, (_, i) => ({
     day: i,
-    level: Math.floor(Math.random() * 5), // 0 to 4
+    level: 0, // Initial state for fresh site
   }));
 
   const colors = [
@@ -85,10 +85,10 @@ export default function Analytics() {
       { label: "Critical Alerts", value: teacherRecords.filter((r: any) => parseInt(r.attendance) < 75).length.toString(), icon: AlertTriangle, color: "text-destructive" },
     ]
     : [
-      { label: "Current Semester", value: studentData?.semester || "5", icon: Users, color: "text-primary" },
-      { label: "Placement Score", value: "840", icon: Target, color: "text-success" },
-      { label: "Learning Rank", value: "#14", icon: TrendingUp, color: "text-warning" },
-      { label: "Course Gaps", value: "2", icon: AlertTriangle, color: "text-destructive" },
+      { label: "Current Semester", value: studentData?.semester || "N/A", icon: Users, color: "text-primary" },
+      { label: "Placement Score", value: studentData?.placementScore || "0", icon: Target, color: "text-success" },
+      { label: "Learning Rank", value: studentData?.rank || "N/A", icon: TrendingUp, color: "text-warning" },
+      { label: "Course Gaps", value: "0", icon: AlertTriangle, color: "text-destructive" },
     ];
 
   return (
