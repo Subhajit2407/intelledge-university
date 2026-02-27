@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
-import { placementDrives as mockDrives, careerReadiness as mockReadiness, skillGaps as mockGaps } from "@/lib/mock-data";
 import { Search, Filter, MapPin, Calendar, Users, TrendingUp, Target, Briefcase, ChevronRight, Star, FileSearch, Bot, Sparkles, Loader2, Inbox } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
@@ -18,21 +17,19 @@ export default function Placements() {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [discoveryResults, setDiscoveryResults] = useState<any[]>([]);
   const [dynamicDrives, setDynamicDrives] = useState<any[]>([]);
-  const [readiness, setReadiness] = useState<any>(mockReadiness);
+  const [readiness, setReadiness] = useState<any>({ skill_match: 0, interview_readiness: 0, domain_fit: 0, placement_probability: 0 });
 
   useEffect(() => {
     // Real-time 2026 data pool
     const baseDrives: any[] = [
-      { id: "p1", company: "Microsoft", logo_initial: "M", type: "off-campus", role: "Software Engineer Intern / Explore", ctc_min: 15, ctc_max: 50, cgpa_cutoff: 7.0, skills_required: ["DSA", "OOD", "Problem Solving"], hiring_month: "Summer 2026", location: "Remote / Multiple", status: "active", eligibility: "eligible", match_score: 95, apply_link: "https://careers.microsoft.com/v2/global/en/exploremicrosoft" },
-      { id: "p2", company: "Google", logo_initial: "G", type: "off-campus", role: "STEP Intern 2026", ctc_min: 18, ctc_max: 60, cgpa_cutoff: 8.0, skills_required: ["Algorithms", "Data Structures"], hiring_month: "Nov 2025 (Apply early)", location: "Pan India", status: "active", eligibility: "eligible", match_score: 98, apply_link: "https://buildyourfuture.withgoogle.com/internships" },
-      { id: "p3", company: "Amazon", logo_initial: "A", type: "off-campus", role: "SDE Intern 2026", ctc_min: 20, ctc_max: 45, cgpa_cutoff: 7.5, skills_required: ["Java", "Problem Solving"], hiring_month: "Jan 2026 Start", location: "Multiple", status: "active", eligibility: "eligible", match_score: 88, apply_link: "https://amazon.jobs/university" },
-      { id: "p4", company: "Apple", logo_initial: "A", type: "off-campus", role: "Software Engineer Intern", ctc_min: 25, ctc_max: 55, cgpa_cutoff: 8.5, skills_required: ["Swift", "C++", "System Design"], hiring_month: "Rolling Basis", location: "Hyderabad/Remote", status: "active", eligibility: "eligible", match_score: 82, apply_link: "https://apple.com/jobs" },
-      { id: "p5", company: "ServiceNow", logo_initial: "S", type: "on-campus", role: "Associate Software Engineer", ctc_min: 18, ctc_max: 25, cgpa_cutoff: 7.5, skills_required: ["Java", "Web Technologies"], hiring_month: "Jul–Aug", location: "Hyderabad/Bangalore", status: "upcoming", eligibility: "eligible", match_score: 94, apply_link: "https://servicenow.com/careers" },
-      { id: "p6", company: "Salesforce", logo_initial: "S", type: "off-campus", role: "MTS / SWE Intern", ctc_min: 22, ctc_max: 40, cgpa_cutoff: 8.0, skills_required: ["OOPS", "Databases"], hiring_month: "Aug–Oct", location: "Hyderabad", status: "active", eligibility: "eligible", match_score: 91, apply_link: "https://salesforce.com/careers" },
-      { id: "p7", company: "Uber", logo_initial: "U", type: "off-campus", role: "SDE Intern / Full Time", ctc_min: 25, ctc_max: 65, cgpa_cutoff: 8.5, skills_required: ["DSA", "Architecture"], hiring_month: "Nov–Jan", location: "India/Amsterdam", status: "upcoming", eligibility: "eligible", match_score: 79, apply_link: "https://uber.com/careers" },
-      { id: "p8", company: "Goldman Sachs", logo_initial: "G", type: "on-campus", role: "Engineering Campus Hire", ctc_min: 16, ctc_max: 28, cgpa_cutoff: 7.5, skills_required: ["Quant", "Algorithms"], hiring_month: "Jul–Sep", location: "Bangalore", status: "upcoming", eligibility: "eligible", match_score: 87, apply_link: "https://goldmansachs.com/careers" },
-      { id: "p9", company: "Meta", logo_initial: "M", type: "off-campus", role: "SWE Intern / University Grad", ctc_min: 30, ctc_max: 80, cgpa_cutoff: 8.5, skills_required: ["C++", "Python", "Scale"], hiring_month: "Aug–Dec", location: "London/USA/Remote", status: "active", eligibility: "eligible", match_score: 74, apply_link: "https://metacareers.com" },
-      { id: "p10", company: "JP Morgan", logo_initial: "J", type: "on-campus", role: "Software Engineer Program", ctc_min: 14, ctc_max: 18, cgpa_cutoff: 7.0, skills_required: ["Java", "Spring Boot"], hiring_month: "Aug–Sep", location: "Mumbai/Bangalore", status: "upcoming", eligibility: "eligible", match_score: 92, apply_link: "https://jpmorganchase.com/careers" }
+      { id: "p1", company: "MotherDuck", logo_initial: "M", type: "off-campus", role: "Software Engineer", ctc_min: 15, ctc_max: 25, cgpa_cutoff: 7.5, skills_required: ["Software Engineering"], hiring_month: "1 day ago", location: "Seattle, WA", status: "active", eligibility: "eligible", match_score: 95, apply_link: "https://jobs.menlovc.com/companies/alta-2-74f7de65-629e-4098-8a5a-fe5d04313e81/jobs/62837916-full-stack-engineer-jobs-38-546-open-jobs" },
+      { id: "p2", company: "CLEAR", logo_initial: "C", type: "off-campus", role: "Software Engineer", ctc_min: 18, ctc_max: 30, cgpa_cutoff: 8.0, skills_required: ["Software Engineering"], hiring_month: "2 days ago", location: "New York, NY", status: "active", eligibility: "eligible", match_score: 98, apply_link: "https://jobs.menlovc.com/companies/alta-2-74f7de65-629e-4098-8a5a-fe5d04313e81/jobs/62837916-full-stack-engineer-jobs-38-546-open-jobs" },
+      { id: "p3", company: "TriEdge Investment", logo_initial: "T", type: "off-campus", role: "Full-Stack Engineer", ctc_min: 12, ctc_max: 22, cgpa_cutoff: 7.0, skills_required: ["Full-Stack Eng"], hiring_month: "13 hours ago", location: "New York, NY", status: "active", eligibility: "eligible", match_score: 88, apply_link: "https://www1.communitech.ca/companies/forcen/jobs/61739512-full-stack-engineer-jobs" },
+      { id: "p4", company: "SpruceID", logo_initial: "S", type: "off-campus", role: "Full-Stack Software", ctc_min: 10, ctc_max: 20, cgpa_cutoff: 7.0, skills_required: ["Full-Stack Soft"], hiring_month: "2 days ago", location: "Remote", status: "active", eligibility: "eligible", match_score: 85, apply_link: "https://jobgether.com/remote-jobs/new-york-usa/full-stack-engineer" },
+      { id: "p5", company: "Baselayer", logo_initial: "B", type: "off-campus", role: "Full Stack Engineer", ctc_min: 14, ctc_max: 26, cgpa_cutoff: 7.5, skills_required: ["Full Stack Eng"], hiring_month: "1 day ago", location: "San Francisco, CA", status: "active", eligibility: "eligible", match_score: 92, apply_link: "https://techjobs.marsdd.com/companies/forcen/jobs/61739512-full-stack-engineer-jobs" },
+      { id: "p6", company: "Metron Inc.", logo_initial: "M", type: "off-campus", role: "Full Stack Engineer", ctc_min: 12, ctc_max: 24, cgpa_cutoff: 7.5, skills_required: ["Full Stack Eng"], hiring_month: "1 day ago", location: "Reston, VA", status: "active", eligibility: "eligible", match_score: 89, apply_link: "https://jobs.techstars.com/companies/spiky-ai/jobs/59997552-full-stack-engineer-jobs" },
+      { id: "p7", company: "Anthropic", logo_initial: "A", type: "off-campus", role: "Applied AI Engineer", ctc_min: 25, ctc_max: 45, cgpa_cutoff: 8.5, skills_required: ["AI", "Applied AI Eng"], hiring_month: "< 1 day ago", location: "Startup AI Role", status: "active", eligibility: "eligible", match_score: 96, apply_link: "https://jobs.bvp.com/jobs/anthropic?trk=public_post_main-feed-card-text" },
+      { id: "p8", company: "Toyota Connected", logo_initial: "T", type: "off-campus", role: "Machine Learning", ctc_min: 16, ctc_max: 28, cgpa_cutoff: 8.0, skills_required: ["Machine Learning"], hiring_month: "Recent", location: "Plano, TX", status: "active", eligibility: "eligible", match_score: 91, apply_link: "https://job-boards.greenhouse.io/toyotaconnected" }
     ];
 
     setDynamicDrives(baseDrives);
@@ -55,11 +52,7 @@ export default function Placements() {
 
   const runDiscovery = () => {
     setIsDiscovering(true);
-    const jobPool = [
-      { company: "TCS", role: "NQT 2026 Ninja/Digital", link: "#", date: "Just now" },
-      { company: "Infosys", role: "Specialist Programmer", link: "#", date: "1 day ago" },
-      { company: "Wipro", role: "Elite NTH Drive", link: "#", date: "2 days ago" },
-    ];
+    const jobPool = dynamicDrives;
 
     setTimeout(() => {
       const shuffled = [...jobPool].sort(() => 0.5 - Math.random());

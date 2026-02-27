@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -7,6 +7,31 @@ const today = new Date();
 export function CalendarWidget() {
   const [month] = useState(today.getMonth());
   const [year] = useState(today.getFullYear());
+  const [eventDays, setEventDays] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Try to get events from projects or alerts
+    const alerts = JSON.parse(localStorage.getItem("intelledge_alerts") || "[]");
+    const projects = JSON.parse(localStorage.getItem("student_projects") || "[]");
+
+    const days: number[] = [];
+
+    alerts.forEach((a: any) => {
+      const d = new Date(a.timestamp);
+      if (d.getMonth() === month && d.getFullYear() === year) {
+        days.push(d.getDate());
+      }
+    });
+
+    projects.forEach((p: any) => {
+      const d = new Date(p.endDate);
+      if (d.getMonth() === month && d.getFullYear() === year) {
+        days.push(d.getDate());
+      }
+    });
+
+    setEventDays([...new Set(days)]);
+  }, [month, year]);
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -15,8 +40,6 @@ export function CalendarWidget() {
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  const eventDays = [4, 13, 19];
 
   return (
     <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in" style={{ animationDelay: "200ms" }}>
@@ -46,15 +69,14 @@ export function CalendarWidget() {
           return (
             <div
               key={i}
-              className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition-colors mx-auto ${
-                isToday
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition-colors mx-auto ${isToday
                   ? "gradient-primary text-primary-foreground shadow-primary-glow"
                   : hasEvent
-                  ? "bg-accent text-accent-foreground font-bold"
-                  : day
-                  ? "text-foreground hover:bg-secondary cursor-pointer"
-                  : ""
-              }`}
+                    ? "bg-accent text-accent-foreground font-bold"
+                    : day
+                      ? "text-foreground hover:bg-secondary cursor-pointer"
+                      : ""
+                }`}
             >
               {day}
             </div>

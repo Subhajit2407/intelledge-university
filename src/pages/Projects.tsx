@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
-import { assignments } from "@/lib/mock-data";
 import { CheckCircle, Clock, AlertCircle, Plus, FolderGit2, Calendar, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -19,12 +18,19 @@ interface Project {
 
 export default function Projects() {
   const [filter, setFilter] = useState<StatusFilter>("all");
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem("student_projects");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newProj, setNewProj] = useState<Partial<Project>>({
     name: "", startDate: "", endDate: "", useManualProgress: false, manualProgress: 0
   });
   const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("student_projects", JSON.stringify(projects));
+  }, [projects]);
 
   const calculateProgress = (proj: Project) => {
     if (proj.useManualProgress) return proj.manualProgress;
@@ -67,8 +73,6 @@ export default function Projects() {
     submitted: { icon: AlertCircle, color: "text-primary", bg: "bg-primary/10", label: "Submitted" },
     graded: { icon: CheckCircle, color: "text-success", bg: "bg-success/10", label: "Graded" },
   };
-
-  const filtered = filter === "all" ? assignments : assignments.filter((a) => a.status === filter);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

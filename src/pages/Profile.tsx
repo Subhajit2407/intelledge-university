@@ -94,6 +94,17 @@ export default function Profile() {
                                             <span className="text-foreground">Edge-Node-01</span>
                                         </div>
                                     </div>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm("This will permanently wipe all local intelligence, records, and sessions. Proceed?")) {
+                                                localStorage.clear();
+                                                window.location.href = "/login";
+                                            }
+                                        }}
+                                        className="w-full mt-6 py-3 rounded-2xl bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-100 transition-all active:scale-95"
+                                    >
+                                        Cold System Reset
+                                    </button>
                                 </div>
                             </div>
 

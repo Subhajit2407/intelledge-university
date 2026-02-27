@@ -1,18 +1,38 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
-const data = [
-  { month: "Jan", academic: 65, placement: 30 },
-  { month: "Feb", academic: 70, placement: 35 },
-  { month: "Mar", academic: 62, placement: 42 },
-  { month: "Apr", academic: 75, placement: 48 },
-  { month: "May", academic: 78, placement: 55 },
-  { month: "Jun", academic: 72, placement: 60 },
-  { month: "Jul", academic: 80, placement: 64 },
-];
+import { useEffect, useState } from "react";
 
 export function ActivityChart() {
+  const [data, setData] = useState([
+    { month: "Jan", academic: 0, placement: 0 },
+    { month: "Feb", academic: 0, placement: 0 },
+    { month: "Mar", academic: 0, placement: 0 },
+    { month: "Apr", academic: 0, placement: 0 },
+    { month: "May", academic: 0, placement: 0 },
+    { month: "Jun", academic: 0, placement: 0 },
+    { month: "Jul", academic: 0, placement: 0 },
+  ]);
+
+  useEffect(() => {
+    // In a real app, we'd fetch historical scores. 
+    // For now, let's see if we have some data in localStorage to start a trend.
+    const studentData = JSON.parse(localStorage.getItem("student_profile_data") || "{}");
+    const teacherRecords = JSON.parse(localStorage.getItem("teacher_student_records") || "[]");
+    const myRecord = teacherRecords.find((r: any) => r.name === studentData.name || r.roll === studentData.roll);
+
+    if (myRecord) {
+      const score = parseFloat(myRecord.score);
+      const placement = parseInt(studentData.placementScore || "0");
+
+      // Update only the current month (simplified)
+      const currentMonth = new Date().toLocaleString('default', { month: 'short' });
+      setData(prev => prev.map(d => d.month === currentMonth ? { ...d, academic: score, placement: placement } : d));
+    }
+  }, []);
+
+  const hasData = data.some(d => d.academic > 0 || d.placement > 0);
+
   return (
-    <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in" style={{ animationDelay: "150ms" }}>
+    <div className="rounded-2xl bg-card shadow-card p-5 animate-fade-in relative min-h-[250px]" style={{ animationDelay: "150ms" }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-foreground">Performance Trends</h3>
         <div className="flex gap-3 text-[10px] font-semibold">
@@ -24,6 +44,13 @@ export function ActivityChart() {
           </span>
         </div>
       </div>
+
+      {!hasData && (
+        <div className="absolute inset-0 flex items-center justify-center bg-card/60 backdrop-blur-[1px] z-10 rounded-2xl">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic pt-8">Awaiting Neural Synchronization...</p>
+        </div>
+      )}
+
       <ResponsiveContainer width="100%" height={180}>
         <AreaChart data={data}>
           <defs>

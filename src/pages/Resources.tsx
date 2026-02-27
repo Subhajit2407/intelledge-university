@@ -32,12 +32,7 @@ const typeIcons: Record<string, any> = {
 
 export default function Resources() {
   const [search, setSearch] = useState("");
-  const [resources, setResources] = useState<Resource[]>([
-    { id: "r1", title: "Advanced Data Structures - Full Notes", type: "notes", subjectCode: "CS301", subject: "CS301", size: "4.2 MB", date: "2026-02-15", uploaded_at: "2026-02-15", progress: 85, topics_total: 100, topics_completed: 85, behind_schedule: false, ai_summary: "Comprehensive guide on trees, graphs, and hashing with practical implementation in C++." },
-    { id: "r2", title: "Computer Networks Question Bank 2026", type: "papers", subjectCode: "CS302", subject: "CS302", size: "1.8 MB", date: "2026-02-20", uploaded_at: "2026-02-20", progress: 40, topics_total: 100, topics_completed: 40, behind_schedule: true, ai_summary: "Curated list of repeated university questions and important numericals for the 2026 exams." },
-    { id: "r3", title: "Software Engineering Project Lab Manual", type: "labs", subjectCode: "CS303", subject: "CS303", size: "2.5 MB", date: "2026-01-10", uploaded_at: "2026-01-10", progress: 100, topics_total: 100, topics_completed: 100, behind_schedule: false, ai_summary: "Step-by-step instructions for Agile development practices and UML diagramming labs." },
-    { id: "r4", title: "Institutional Syllabus V4.0 - SEM 6", type: "syllabus", subjectCode: "ALL", subject: "ALL", size: "0.8 MB", date: "2026-01-05", uploaded_at: "2026-01-05", progress: 10, topics_total: 100, topics_completed: 10, behind_schedule: true, ai_summary: "Official department syllabus including credit distribution and elective choices for SEM 6." },
-  ]);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [filter, setFilter] = useState<"all" | "behind">("all");
 
   const filtered = resources.filter((r) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { GraduationCap, LogIn, User, Bot, Loader2, UserPlus, ArrowLeft } from "lucide-react";
+import { GraduationCap, LogIn, User, Bot, Loader2, UserPlus, ArrowLeft, ShieldCheck, Cpu } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -24,77 +24,83 @@ export default function Login() {
         setIsLoading(false);
       } else {
         localStorage.setItem("intelledge_role", role);
-        toast.success("Login Successful", {
-          description: `Welcome back to IntellEdge as a ${role === 'student' ? 'Student' : 'Faculty Member'}.`,
+        toast.success("Sync Successful", {
+          description: `Welcome back, ${role === 'student' ? 'Student' : 'Faculty Member'}. Your neural session has been restored.`,
         });
         setIsLoading(false);
         // Navigate to dashboard after login
         window.location.href = "/dashboard";
       }
-    }, 1500);
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F8FAFC] relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-white relative overflow-hidden font-sans">
       {/* Background Aesthetic Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px]" />
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-emerald-100/40 rounded-full blur-[120px] animate-pulse-slow" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-50/50 rounded-full blur-[120px]" />
 
-      <div className="w-full max-w-md p-8 relative z-10">
+      <div className="w-full max-w-[480px] p-8 relative z-10">
         <button
           onClick={() => navigate("/")}
-          className="absolute -top-12 left-8 flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors font-bold text-sm"
+          className="absolute -top-16 left-8 flex items-center gap-2 text-slate-400 hover:text-[#0D2B1D] transition-colors font-bold text-sm group"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to Home
+          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to System
         </button>
 
-        <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-primary-glow mb-6 hover:rotate-3 transition-transform cursor-pointer">
-            <GraduationCap className="h-8 w-8 text-white" />
+        <div className="text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-[#0D2B1D] text-white shadow-2xl mb-8 hover:scale-105 transition-transform cursor-pointer overflow-hidden group">
+            <GraduationCap className="h-10 w-10 relative z-10" />
+            <div className="absolute inset-0 bg-primary/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </div>
-          <h1 className="text-3xl font-black text-[#0D2B1D] tracking-tight italic">
-            {isSignup ? "Create Intelligence Account" : "Access Neural Gateway"}
+          <h1 className="text-4xl font-bold text-[#0D2B1D] tracking-tight">
+            {isSignup ? "Create Profile" : "Neural Gateway"}
           </h1>
-          <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide">
-            {isSignup ? "Join the next generation of academic intelligence" : "Initialize your academic synchronization"}
+          <p className="text-sm text-slate-500 mt-4 font-medium max-w-[300px] mx-auto leading-relaxed">
+            {isSignup ? "Join the next generation of academic intelligence systems." : "Initialize your academic synchronization and access your workspace."}
           </p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex p-1 bg-slate-100 rounded-xl mb-2">
+        <div className="glass border-slate-200 rounded-[3rem] p-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="flex p-1.5 bg-slate-100/50 rounded-2xl mb-4 border border-slate-200/50">
               <button
                 type="button"
                 onClick={() => setRoleState("student")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black transition-all ${role === "student" ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${role === "student" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
               >
-                <User className="h-3 w-3" /> STUDENT
+                <User className="h-4 w-4" /> STUDENT
               </button>
               <button
                 type="button"
                 onClick={() => setRoleState("teacher")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] font-black transition-all ${role === "teacher" ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${role === "teacher" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
               >
-                <Bot className="h-3 w-3" /> TEACHER
+                <Cpu className="h-4 w-4" /> FACULTY
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="group space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest pl-1 group-focus-within:text-primary transition-colors italic">Institutional ID</label>
-                <input
-                  type="text"
-                  placeholder={role === "student" ? "Student ID or Email" : "Faculty ID or Email"}
-                  className="w-full rounded-2xl bg-slate-50 border border-slate-200 px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300 focus:bg-white"
-                  required
-                />
+            <div className="space-y-5">
+              <div className="group space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] pl-1 group-focus-within:text-primary transition-colors">Institutional ID</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={role === "student" ? "Student ID or Email" : "Faculty ID or Email"}
+                    className="w-full rounded-2xl bg-white/50 border border-slate-200 px-6 py-4.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all placeholder:text-slate-300"
+                    required
+                  />
+                </div>
               </div>
-              <div className="group space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest pl-1 group-focus-within:text-primary transition-colors italic">Access Key</label>
+              <div className="group space-y-2">
+                <div className="flex justify-between items-center px-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] group-focus-within:text-primary transition-colors">Security Token</label>
+                  {!isSignup && <button type="button" className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest">Reset</button>}
+                </div>
                 <input
                   type="password"
-                  placeholder="Security Token"
-                  className="w-full rounded-2xl bg-slate-50 border border-slate-200 px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300 focus:bg-white"
+                  placeholder="Access Key"
+                  className="w-full rounded-2xl bg-white/50 border border-slate-200 px-6 py-4.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all placeholder:text-slate-300"
                   required
                 />
               </div>
@@ -103,27 +109,28 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-2xl bg-[#0D2B1D] py-4 text-xs font-black text-white shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest"
+              className="w-full rounded-2xl bg-[#0D2B1D] py-5 text-sm font-bold text-white shadow-[0_20px_40px_-10px_rgba(13,43,29,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest overflow-hidden relative group"
             >
+              <div className="absolute inset-0 bg-primary/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
               {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                <div className="flex items-center gap-3 relative z-10">
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   <span>Syncing...</span>
-                </>
+                </div>
               ) : (
-                <>
-                  {isSignup ? <UserPlus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
-                  <span>{isSignup ? "Create Profile" : "Initialize Sync"}</span>
-                </>
+                <div className="flex items-center gap-3 relative z-10">
+                  {isSignup ? <UserPlus className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
+                  <span>{isSignup ? "Create Profile" : "Authorize Sync"}</span>
+                </div>
               )}
             </button>
           </form>
 
-          <div className="mt-8 text-center text-xs font-bold text-slate-400">
+          <div className="mt-10 text-center text-sm font-semibold text-slate-400">
             {isSignup ? (
-              <p>Already have an account? <button onClick={() => setIsSignup(false)} className="text-primary hover:underline">Sign In</button></p>
+              <p>Already joined the network? <button onClick={() => setIsSignup(false)} className="text-[#0D2B1D] hover:underline font-bold">Log In</button></p>
             ) : (
-              <p>New to IntellEdge? <button onClick={() => setIsSignup(true)} className="text-primary hover:underline">Create Account</button></p>
+              <p>New to the system? <button onClick={() => setIsSignup(true)} className="text-[#0D2B1D] hover:underline font-bold">Request Access</button></p>
             )}
           </div>
         </div>

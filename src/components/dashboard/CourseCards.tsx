@@ -1,67 +1,64 @@
-import course1 from "@/assets/course-1.png";
-import course2 from "@/assets/course-2.png";
-import course3 from "@/assets/course-3.png";
-import { Users, BookOpen, TrendingUp } from "lucide-react";
-
-const courses = [
-  {
-    title: "Data Structures & Algorithms",
-    instructor: "Dr. Priya Sharma",
-    image: course1,
-    students: 120,
-    modules: 14,
-    progress: 68,
-  },
-  {
-    title: "UI/UX Design Systems",
-    instructor: "Prof. Ravi Kumar",
-    image: course2,
-    students: 85,
-    modules: 10,
-    progress: 82,
-  },
-  {
-    title: "Machine Learning",
-    instructor: "Dr. Anand Mehta",
-    image: course3,
-    students: 96,
-    modules: 12,
-    progress: 45,
-  },
-];
+import { Users, BookOpen, TrendingUp, Presentation } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function CourseCards() {
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const teacherRecords = JSON.parse(localStorage.getItem("teacher_student_records") || "[]");
+    const currentStudent = JSON.parse(localStorage.getItem("student_profile_data") || "{}");
+    const myRecord = teacherRecords.find((r: any) => r.name === currentStudent.name || r.roll === currentStudent.roll);
+
+    if (myRecord && myRecord.subjects && myRecord.subjects.length > 0) {
+      const dynamicCourses = myRecord.subjects.map((sub: any) => ({
+        title: sub.name,
+        instructor: "Assigned Faculty",
+        students: 60,
+        modules: parseInt(sub.credits || "3") * 3,
+        progress: sub.totalClasses ? Math.round((sub.attendedClasses / sub.totalClasses) * 100) : 0,
+      }));
+      setCourses(dynamicCourses);
+    }
+  }, []);
+
   return (
     <div>
       <h3 className="text-lg font-bold text-foreground mb-4">Active Courses</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {courses.map((course, i) => (
-          <div
-            key={course.title}
-            className="group rounded-2xl bg-card shadow-card overflow-hidden transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 animate-fade-in"
-            style={{ animationDelay: `${i * 100}ms` }}
-          >
-            <div className="h-32 overflow-hidden gradient-accent flex items-center justify-center">
-              <img src={course.image} alt={course.title} className="h-28 w-28 object-contain group-hover:scale-105 transition-transform duration-300" />
-            </div>
-            <div className="p-4">
-              <h4 className="text-sm font-bold text-foreground mb-1 truncate">{course.title}</h4>
-              <p className="text-xs text-muted-foreground mb-3">{course.instructor}</p>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users className="h-3 w-3 text-primary" /> {course.students}
-                </span>
-                <span className="flex items-center gap-1">
-                  <BookOpen className="h-3 w-3 text-primary" /> {course.modules}
-                </span>
-                <span className="flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3 text-primary" /> {course.progress}%
-                </span>
+      {courses.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
+          <Presentation className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No active courses. Faculty sync pending.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {courses.map((course, i) => (
+            <div
+              key={course.title + i}
+              className="group rounded-2xl bg-card shadow-card overflow-hidden transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 animate-fade-in"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              <div className="h-32 overflow-hidden gradient-accent flex items-center justify-center">
+                <Presentation className="h-16 w-16 text-primary group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="p-4">
+                <h4 className="text-sm font-bold text-foreground mb-1 truncate">{course.title}</h4>
+                <p className="text-xs text-muted-foreground mb-3">{course.instructor}</p>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3 text-primary" /> {course.students}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <BookOpen className="h-3 w-3 text-primary" /> {course.modules}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 text-primary" /> {course.progress}%
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
