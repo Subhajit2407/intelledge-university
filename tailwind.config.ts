@@ -76,6 +76,10 @@ export default {
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
       },
+      boxShadow: {
+        'ios': '0 8px 32px rgba(0, 0, 0, 0.04)',
+        'ios-sm': '0 10px 40px -15px rgba(0, 0, 0, 0.08)',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

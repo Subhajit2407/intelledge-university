@@ -159,7 +159,7 @@
   }
 
   .ios-card {
-    @apply bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-[0_8px_32px_rgba(0, 0, 0, 0.04)];
+    @apply bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-ios;
   }
 
   .ios-btn-primary {
@@ -171,7 +171,7 @@
   }
 
   .ios-shadow {
-    @apply shadow-[0_10px_40px_-15px_rgba(0, 0, 0, 0.08)];
+    @apply shadow-ios-sm;
   }
 
   @keyframes float {

@@ -60,11 +60,22 @@ export function AIVoiceOrb() {
 
     // Proactive Briefing on Dashboard or Login
     useEffect(() => {
-        if (location.pathname === "/" && mode === "idle") {
+        // Trigger on Dashboard or Landing
+        if ((location.pathname === "/" || location.pathname === "/dashboard") && mode === "idle") {
+            const teacherRecords = JSON.parse(localStorage.getItem("teacher_student_records") || "[]");
+            const myRecord = teacherRecords.find((r: any) => r.name === studentData.name);
+
+            let statusDetail = currentContent.briefing;
+            if (myRecord) {
+                const att = parseInt(myRecord.attendance);
+                if (att < 75) statusDetail = "System Alert: Your attendance dropped to " + att + "%. Please contact faculty.";
+                else if (att > 90) statusDetail = "Exceptional status verified. Attendance is a perfect " + att + "%.";
+            }
+
             setTimer(3000, () => {
                 setMode("briefing");
                 setIsOpen(true);
-                const fullMsg = currentContent.greeting + " " + currentContent.briefing;
+                const fullMsg = currentContent.greeting + " " + statusDetail;
                 setMessage(fullMsg);
                 speak(fullMsg);
             });
@@ -132,14 +143,46 @@ export function AIVoiceOrb() {
     const speak = (text: string) => {
         if (isQuietMode) return;
         window.speechSynthesis.cancel();
+
         const utterance = new SpeechSynthesisUtterance(text);
+
+        // Dynamic Voice Selection
+        const voices = window.speechSynthesis.getVoices();
+        let selectedVoice = null;
+
+        if (lang === "en") {
+            // Priority: Google US English > Microsoft David > Any English
+            selectedVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Premium")) ||
+                voices.find(v => v.lang.startsWith("en-") && v.name.includes("Female")) ||
+                voices.find(v => v.lang.startsWith("en-"));
+        } else if (lang === "kn") {
+            selectedVoice = voices.find(v => v.lang.startsWith("kn")) || voices.find(v => v.lang.startsWith("hi")); // Fallback to Hindi if Kannada not available
+        } else if (lang === "hi") {
+            selectedVoice = voices.find(v => v.lang.startsWith("hi"));
+        }
+
+        if (selectedVoice) utterance.voice = selectedVoice;
         utterance.lang = lang === "en" ? "en-US" : lang === "kn" ? "kn-IN" : "hi-IN";
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
+
+        // Premium Prosody Settings
+        utterance.rate = 1.0;
+        utterance.pitch = 1.05; // Slightly higher for a "premium assistant" feel
+        utterance.volume = 1.0;
+
         utterance.onstart = () => setMode("speaking");
         utterance.onend = () => setMode("idle");
+        utterance.onerror = () => setMode("idle");
+
         window.speechSynthesis.speak(utterance);
     };
+
+    // Load voices on mount to ensure availability
+    useEffect(() => {
+        window.speechSynthesis.getVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+    }, []);
 
     const processVoiceCommand = (text: string) => {
         setMode("processing");
@@ -227,6 +270,9 @@ export function AIVoiceOrb() {
             recognitionRef.current?.stop();
             setMode("idle");
         } else {
+            // Ensure audio context is resumed if browser blocked speech
+            if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+
             setMode("listening");
             if (recognitionRef.current) {
                 recognitionRef.current.lang = lang === "en" ? "en-US" : lang === "kn" ? "kn-IN" : "hi-IN";

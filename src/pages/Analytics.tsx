@@ -130,14 +130,12 @@ export default function Analytics() {
       ]);
     }
 
-    setTrendData([
-      { month: "Jan", avg: 82 }, { month: "Feb", avg: 85 }, { month: "Mar", avg: 88 }
-    ]);
+    setTrendData([]);
 
     setSkillData([
-      { skill: "Logic", current: 75, required: 90 },
-      { skill: "Design", current: 60, required: 80 },
-      { skill: "Systems", current: 40, required: 70 }
+      { skill: "Logic", current: 0, required: 90 },
+      { skill: "Design", current: 0, required: 80 },
+      { skill: "Systems", current: 0, required: 70 }
     ]);
 
   }, []);
