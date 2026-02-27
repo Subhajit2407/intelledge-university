@@ -141,40 +141,60 @@ export function AIVoiceOrb() {
     }, [lang, mode]);
 
 
-    const speak = (text: string) => {
+    const speak = (text: string, forcedLang?: "en" | "kn" | "hi") => {
         if (isQuietMode) return;
-        window.speechSynthesis.cancel();
+        const currentLang = forcedLang || lang;
 
-        const utterance = new SpeechSynthesisUtterance(text);
+        // Clean text for speech
+        const cleanText = text
+            .replace(/[#*`|_~]/g, "") // Remove markdown
+            .replace(/\[.*\]\(.*\)/g, "") // Remove links
+            .replace(/[^\w\s\u0900-\u097F\u0C80-\u0CFF,.?!]/gi, "") // Keep alphanumeric, Hindi, Kannada, and basic punctuation
+            .trim();
+
+        if (!cleanText) return;
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
 
         // Dynamic Voice Selection
         const voices = window.speechSynthesis.getVoices();
         let selectedVoice = null;
 
+        const targetLang = currentLang === "en" ? "en" : currentLang === "kn" ? "kn" : "hi";
+        const langCode = currentLang === "en" ? "en-US" : currentLang === "kn" ? "kn-IN" : "hi-IN";
+
         if (lang === "en") {
-            // Priority: Google US English > Microsoft David > Any English
-            selectedVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Premium")) ||
+            selectedVoice = voices.find(v => (v.lang.startsWith("en-") && (v.name.includes("Google") || v.name.includes("Premium") || v.name.includes("Natural")))) ||
                 voices.find(v => v.lang.startsWith("en-") && v.name.includes("Female")) ||
                 voices.find(v => v.lang.startsWith("en-"));
-        } else if (lang === "kn") {
-            selectedVoice = voices.find(v => v.lang.startsWith("kn")) || voices.find(v => v.lang.startsWith("hi")); // Fallback to Hindi if Kannada not available
-        } else if (lang === "hi") {
-            selectedVoice = voices.find(v => v.lang.startsWith("hi"));
+        } else {
+            // Priority: Exact match > Starts with lang > Fallback to any regional if needed
+            selectedVoice = voices.find(v => v.lang.toLowerCase() === langCode.toLowerCase()) ||
+                voices.find(v => v.lang.toLowerCase().startsWith(targetLang)) ||
+                voices.find(v => v.lang.toLowerCase().startsWith("hi")); // Hindi is a common fallback
         }
 
-        if (selectedVoice) utterance.voice = selectedVoice;
-        utterance.lang = lang === "en" ? "en-US" : lang === "kn" ? "kn-IN" : "hi-IN";
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+        }
 
-        // Premium Prosody Settings
+        utterance.lang = langCode;
         utterance.rate = 1.0;
-        utterance.pitch = 1.05; // Slightly higher for a "premium assistant" feel
+        utterance.pitch = 1.05;
         utterance.volume = 1.0;
 
         utterance.onstart = () => setMode("speaking");
         utterance.onend = () => setMode("idle");
-        utterance.onerror = () => setMode("idle");
+        utterance.onerror = (e) => {
+            console.error("SpeechSynthesis Error:", e);
+            setMode("idle");
+        };
 
-        window.speechSynthesis.speak(utterance);
+        // Some browsers need a tiny delay after cancel()
+        setTimeout(() => {
+            window.speechSynthesis.speak(utterance);
+        }, 50);
     };
 
     // Load voices on mount to ensure availability
@@ -210,7 +230,7 @@ export function AIVoiceOrb() {
             }
 
             setMessage(aiResponse.message);
-            speak(aiResponse.message);
+            speak(aiResponse.message, aiResponse.language);
 
             // Handle navigation action
             if (aiResponse.action?.type === "navigate" && aiResponse.action.path) {
@@ -224,7 +244,7 @@ export function AIVoiceOrb() {
             console.error("AI Error:", error);
             const errorMsg = "I'm having trouble connecting to my neural network. Please check your connection.";
             setMessage(errorMsg);
-            speak(errorMsg);
+            speak(errorMsg, lang);
             setMode("idle");
         }
     };

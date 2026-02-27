@@ -46,6 +46,14 @@ export default function AICopilot() {
   }, []);
 
   useEffect(() => {
+    // Force voice loading
+    window.speechSynthesis.getVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+  }, []);
+
+  useEffect(() => {
     if (messages.length === 0) {
       const name = context.student.name?.split(" ")[0] || "Student";
       setMessages([
@@ -82,8 +90,17 @@ export default function AICopilot() {
     }
   }, []);
 
-  const speak = (text: string) => {
-    const cleanText = text.replace(/[#*`|]/g, "").replace(/\[.*\]\(.*\)/g, "").replace(/✅|📌|📊|🔮|⚠️|👋|🧠|🏢/g, "");
+  const speak = (text: string, forcedLang?: "en" | "kn" | "hi") => {
+    const currentLang = forcedLang || voiceLang;
+    // Clean text for speech
+    const cleanText = text
+      .replace(/[#*`|_~]/g, "") // Remove markdown
+      .replace(/\[.*\]\(.*\)/g, "") // Remove links
+      .replace(/[^\w\s\u0900-\u097F\u0C80-\u0CFF,.?!]/gi, "") // Keep alphanumeric, Hindi, Kannada, and basic punctuation
+      .trim();
+
+    if (!cleanText) return;
+
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(cleanText);
 
@@ -91,21 +108,32 @@ export default function AICopilot() {
     const voices = window.speechSynthesis.getVoices();
     let selectedVoice = null;
 
-    if (voiceLang === "en") {
-      selectedVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Premium")) ||
+    const targetLang = currentLang === "en" ? "en" : currentLang === "kn" ? "kn" : "hi";
+    const langCode = currentLang === "en" ? "en-US" : currentLang === "kn" ? "kn-IN" : "hi-IN";
+
+    if (currentLang === "en") {
+      selectedVoice = voices.find(v => (v.lang.startsWith("en-") && (v.name.includes("Google") || v.name.includes("Premium") || v.name.includes("Natural")))) ||
         voices.find(v => v.lang.startsWith("en-") && v.name.includes("Female")) ||
         voices.find(v => v.lang.startsWith("en-"));
-    } else if (voiceLang === "kn") {
-      selectedVoice = voices.find(v => v.lang.startsWith("kn")) || voices.find(v => v.lang.startsWith("hi"));
-    } else if (voiceLang === "hi") {
-      selectedVoice = voices.find(v => v.lang.startsWith("hi"));
+    } else {
+      selectedVoice = voices.find(v => v.lang.toLowerCase() === langCode.toLowerCase()) ||
+        voices.find(v => v.lang.toLowerCase().startsWith(targetLang)) ||
+        voices.find(v => v.lang.toLowerCase().startsWith("hi"));
     }
 
-    if (selectedVoice) utterance.voice = selectedVoice;
-    utterance.lang = voiceLang === "en" ? "en-US" : voiceLang === "kn" ? "kn-IN" : "hi-IN";
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+
+    utterance.lang = langCode;
     utterance.rate = 1.0;
     utterance.pitch = 1.05;
-    window.speechSynthesis.speak(utterance);
+    utterance.volume = 1.0;
+
+    // Small delay for reliability
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 50);
   };
 
   const stopSpeaking = () => {
@@ -132,7 +160,7 @@ export default function AICopilot() {
       setMessages((prev) => [...prev, response]);
 
       if (isVoiceMode) {
-        speak(aiResponse.message);
+        speak(aiResponse.message, aiResponse.language);
         setVoiceStatus("Response synchronized. Tap to speak again.");
       }
     } catch (error) {
