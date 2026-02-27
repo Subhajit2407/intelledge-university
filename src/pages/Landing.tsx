@@ -1,283 +1,392 @@
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, ArrowRight, CheckCircle2, Bot, Users, Sparkles, Globe, Shield, Zap, BarChart3, Layout, Layers } from "lucide-react";
+import {
+    GraduationCap, ArrowRight, Bot, BarChart3, Layout, Zap, Shield,
+    Briefcase, Star, Users, ChevronDown, Sparkles, BookOpen, Trophy,
+    TrendingUp, Globe, CheckCircle, Menu, X
+} from "lucide-react";
 
 export default function Landing() {
     const navigate = useNavigate();
+    const [scrolled, setScrolled] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [activeFeature, setActiveFeature] = useState(0);
+    const heroRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 30);
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    useEffect(() => {
+        const interval = setInterval(() => setActiveFeature(f => (f + 1) % 3), 3500);
+        return () => clearInterval(interval);
+    }, []);
+
+    const navLinks = ["Features", "Modules", "Stats", "Network"];
+
+    const features = [
+        {
+            icon: Bot,
+            title: "AI Academic Copilot",
+            desc: "Multilingual AI assistant with deep contextual understanding of course materials. Ask, clarify, and learn seamlessly.",
+            color: "#34C759",
+            bg: "rgba(52,199,89,0.08)"
+        },
+        {
+            icon: BarChart3,
+            title: "Growth Analytics",
+            desc: "Visual data tracking to monitor progress, predict performance gaps, and identify tailored career paths.",
+            color: "#007AFF",
+            bg: "rgba(0,122,255,0.08)"
+        },
+        {
+            icon: Briefcase,
+            title: "Placement Intelligence",
+            desc: "AI-driven career matching with live recruitment portal, company roadmaps, and readiness scoring.",
+            color: "#FF9F0A",
+            bg: "rgba(255,159,10,0.08)"
+        }
+    ];
+
+    const stats = [
+        { value: "10,000+", label: "Students Enrolled", icon: Users },
+        { value: "98.3%", label: "Placement Rate", icon: Trophy },
+        { value: "500+", label: "Partner Companies", icon: Globe },
+        { value: "4.9★", label: "Average Rating", icon: Star },
+    ];
+
+    const modules = [
+        { icon: BookOpen, label: "Academic Vault", desc: "Track subjects, attendance & grades in real-time", color: "#5E5CE6" },
+        { icon: BarChart3, label: "Growth Analytics", desc: "GitHub-style performance visualization", color: "#007AFF" },
+        { icon: Briefcase, label: "Placement Hub", desc: "Live job listings with AI matching engine", color: "#FF9F0A" },
+        { icon: Layout, label: "Project Vault", desc: "Organize and showcase your project portfolio", color: "#FF375F" },
+        { icon: Bot, label: "AI Copilot", desc: "24/7 multilingual academic assistant", color: "#34C759" },
+        { icon: Shield, label: "ATS Checker", desc: "Resume analysis with industry-grade scoring", color: "#FF6B6B" },
+    ];
+
+    const testimonials = [
+        { name: "Priya Sharma", role: "B.Tech CSE, Semester 6", text: "IntellEdge transformed how I track my academic progress. The AI copilot helped me crack my Java exam!", avatar: "P" },
+        { name: "Rahul Verma", role: "B.Tech ECE, Semester 4", text: "The Placement Hub is incredible. Got matched with 3 companies in my first week. Real-time job listings!", avatar: "R" },
+        { name: "Anjali Nair", role: "M.Tech AI, Semester 2", text: "Growth Analytics gave me insights I never had before. My GPA improved by a full point in one semester.", avatar: "A" },
+    ];
 
     return (
-        <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-primary/20 overflow-hidden">
-            {/* Background Gradients */}
+        <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif" }}
+            className="min-h-screen bg-[#F2F2F7] text-[#1C1C1E] overflow-hidden selection:bg-blue-200/40">
+
+            {/* Ambient Backgrounds */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-                <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-[120px] animate-pulse-slow" />
-                <div className="absolute bottom-[20%] right-[-10%] w-[50%] h-[50%] bg-blue-50/50 rounded-full blur-[120px]" />
-                <div className="absolute top-[40%] left-[20%] w-[30%] h-[30%] bg-primary/5 rounded-full blur-[100px] animate-float" />
+                <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] rounded-full"
+                    style={{ background: "radial-gradient(circle, rgba(52,199,89,0.12) 0%, transparent 70%)", filter: "blur(80px)" }} />
+                <div className="absolute bottom-0 right-[-15%] w-[70%] h-[70%] rounded-full"
+                    style={{ background: "radial-gradient(circle, rgba(0,122,255,0.08) 0%, transparent 70%)", filter: "blur(100px)" }} />
+                <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full"
+                    style={{ background: "radial-gradient(circle, rgba(94,92,230,0.06) 0%, transparent 70%)", filter: "blur(80px)" }} />
             </div>
 
-            {/* Navigation */}
-            <nav className="fixed top-0 w-full z-50 glass px-8 py-5">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate("/")}>
-                        <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-[#0D2B1D] text-white shadow-xl group-hover:rotate-6 transition-transform">
-                            <GraduationCap className="h-6 w-6" />
+            {/* ── NAVIGATION ── */}
+            <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled
+                ? "backdrop-blur-2xl bg-white/80 border-b border-white/30 shadow-sm"
+                : "bg-transparent"}`}
+                style={{ WebkitBackdropFilter: "blur(20px)" }}>
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    {/* Logo */}
+                    <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate("/")}>
+                        <div className="h-9 w-9 rounded-2xl flex items-center justify-center shadow-lg transition-all group-hover:scale-110 group-hover:rotate-3"
+                            style={{ background: "linear-gradient(135deg, #0D2B1D 0%, #1a5c3a 100%)" }}>
+                            <GraduationCap className="h-5 w-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight text-[#0D2B1D]">IntellEdge</span>
+                        <div>
+                            <span className="text-[17px] font-bold tracking-tight text-[#1C1C1E]">IntellEdge</span>
+                            <span className="text-[9px] font-semibold block text-[#34C759] uppercase tracking-widest leading-none -mt-0.5">University AI</span>
+                        </div>
                     </div>
 
-                    <div className="hidden lg:flex items-center gap-10">
-                        {["Features", "Systems", "Network", "Impact"].map((item) => (
-                            <a
-                                key={item}
-                                href={`#${item.toLowerCase()}`}
-                                className="text-sm font-semibold text-slate-600 hover:text-[#0D2B1D] transition-colors relative group"
-                            >
+                    {/* Desktop Nav */}
+                    <div className="hidden md:flex items-center gap-8">
+                        {navLinks.map(item => (
+                            <a key={item} href={`#${item.toLowerCase()}`}
+                                className="text-sm font-semibold text-[#3A3A3C] hover:text-[#1C1C1E] transition-colors relative group">
                                 {item}
-                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#0D2B1D] transition-all group-hover:w-full" />
+                                <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-[#34C759] transition-all duration-300 group-hover:w-full rounded-full" />
                             </a>
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => navigate("/login")}
-                            className="text-sm font-bold text-slate-600 hover:text-[#0D2B1D] px-4 py-2 transition-colors"
-                        >
+                    {/* CTA Buttons */}
+                    <div className="hidden md:flex items-center gap-3">
+                        <button onClick={() => navigate("/login")}
+                            className="text-sm font-semibold text-[#3A3A3C] hover:text-[#1C1C1E] px-4 py-2 rounded-xl transition-all hover:bg-black/5">
                             Log In
                         </button>
-                        <button
-                            onClick={() => navigate("/login?mode=signup")}
-                            className="bg-[#0D2B1D] text-white text-sm font-bold px-7 py-3 rounded-full hover:shadow-[0_20px_40px_-10px_rgba(13,43,29,0.3)] hover:-translate-y-0.5 transition-all active:scale-95"
-                        >
-                            Get Started
+                        <button onClick={() => navigate("/login?mode=signup")}
+                            className="text-sm font-bold px-5 py-2.5 rounded-2xl text-white shadow-lg hover:scale-105 transition-all active:scale-95"
+                            style={{ background: "linear-gradient(135deg, #0D2B1D 0%, #1a5c3a 100%)", boxShadow: "0 4px 20px rgba(13,43,29,0.35)" }}>
+                            Get Started →
                         </button>
                     </div>
+
+                    {/* Mobile Menu Toggle */}
+                    <button className="md:hidden p-2 rounded-xl hover:bg-black/5 transition-colors"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
                 </div>
+
+                {/* Mobile Menu */}
+                {mobileMenuOpen && (
+                    <div className="md:hidden px-6 pb-6 pt-2 space-y-2 border-t border-black/5"
+                        style={{ background: "rgba(242,242,247,0.98)", backdropFilter: "blur(20px)" }}>
+                        {navLinks.map(item => (
+                            <a key={item} href={`#${item.toLowerCase()}`}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="block py-3 px-4 rounded-xl font-semibold text-sm text-[#3A3A3C] hover:bg-black/5 transition-colors">
+                                {item}
+                            </a>
+                        ))}
+                        <div className="pt-2 flex flex-col gap-2">
+                            <button onClick={() => navigate("/login")}
+                                className="w-full py-3 rounded-2xl font-semibold text-sm border border-black/10 hover:bg-black/5 transition-all">
+                                Log In
+                            </button>
+                            <button onClick={() => navigate("/login?mode=signup")}
+                                className="w-full py-3 rounded-2xl font-bold text-sm text-white"
+                                style={{ background: "linear-gradient(135deg, #0D2B1D 0%, #1a5c3a 100%)" }}>
+                                Get Started
+                            </button>
+                        </div>
+                    </div>
+                )}
             </nav>
 
-            {/* Hero Section */}
-            <main className="pt-48 pb-20 px-8 relative">
-                <div className="max-w-5xl mx-auto text-center relative">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-slate-200 text-[#0D2B1D] text-xs font-bold uppercase tracking-widest mb-10 animate-in fade-in slide-in-from-top-4 duration-1000">
-                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        30% more efficient academic syncing
+            {/* ── HERO SECTION ── */}
+            <main ref={heroRef} className="pt-36 pb-28 px-6 relative">
+                <div className="max-w-5xl mx-auto text-center">
+                    {/* Badge */}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-10 border border-[#34C759]/20"
+                        style={{ background: "rgba(52,199,89,0.08)", backdropFilter: "blur(12px)" }}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#34C759] animate-pulse" />
+                        <span className="text-[11px] font-bold text-[#1a5c3a] uppercase tracking-[0.15em]">
+                            Now Live · 2026 Placement Season
+                        </span>
                     </div>
 
-                    <h1 className="text-6xl md:text-[5.5rem] font-bold tracking-tight text-[#0D2B1D] mb-8 leading-[1.05] animate-in fade-in slide-in-from-bottom-8 duration-700">
-                        Intelligent AI-powered <br />
-                        <span className="text-slate-400 font-medium">Academic Platform</span>
+                    {/* Headline */}
+                    <h1 className="text-5xl md:text-7xl font-black tracking-tight text-[#1C1C1E] mb-6 leading-[1.06]"
+                        style={{ letterSpacing: "-0.03em" }}>
+                        Academic Intelligence<br />
+                        <span className="relative">
+                            <span style={{ background: "linear-gradient(135deg, #34C759 0%, #007AFF 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                                Reimagined
+                            </span>
+                        </span>
                     </h1>
 
-                    <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-14 font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                        IntellEdge helps you track progress, automate workflows, and empower
-                        students and faculty with data-driven academic intelligence.
+                    {/* Sub */}
+                    <p className="text-lg md:text-xl text-[#48484A] max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+                        IntellEdge powers students and faculty with AI-driven insights,
+                        real-time placement matching, and intelligent academic tracking.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-5 animate-in fade-in slide-in-from-bottom-16 duration-1000">
-                        <button
-                            onClick={() => navigate("/login?mode=signup")}
-                            className="bg-[#0D2B1D] text-white px-10 py-4.5 rounded-2xl font-bold text-base shadow-2xl hover:scale-105 transition-all flex items-center gap-3 group"
-                        >
-                            Initialize System <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    {/* CTA Row */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+                        <button onClick={() => navigate("/login?mode=signup")}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base text-white shadow-2xl hover:scale-[1.03] transition-all active:scale-95 group"
+                            style={{ background: "linear-gradient(135deg, #0D2B1D 0%, #1a5c3a 100%)", boxShadow: "0 8px 32px rgba(13,43,29,0.35)" }}>
+                            Start for Free
+                            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </button>
-                        <button
-                            className="bg-white border border-slate-200 text-[#0D2B1D] px-10 py-4.5 rounded-2xl font-bold text-base shadow-sm hover:bg-slate-50 transition-all hover:border-slate-300"
-                        >
-                            View Blueprint
+                        <button onClick={() => navigate("/login")}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-base border transition-all hover:shadow-md active:scale-95"
+                            style={{ background: "rgba(255,255,255,0.8)", backdropFilter: "blur(12px)", borderColor: "rgba(0,0,0,0.1)" }}>
+                            <span className="text-[#3A3A3C]">Sign In</span>
                         </button>
                     </div>
 
-                    {/* Platform Mockup - High Fidelity */}
-                    <div className="mt-32 relative group">
-                        <div className="absolute inset-0 bg-primary/20 blur-[150px] rounded-full -z-10 opacity-30 group-hover:opacity-50 transition-opacity duration-1000" />
-
-                        <div className="bg-slate-100/50 p-3 rounded-[3rem] border border-slate-200 relative overflow-hidden animate-in fade-in slide-in-from-bottom-24 duration-1000 shadow-2xl">
-                            <div className="bg-white rounded-[2.2rem] border border-slate-200 shadow-inner p-2 relative">
-                                {/* Browser Chrome */}
-                                <div className="flex items-center gap-1.5 px-6 py-4 border-b border-slate-100">
-                                    <div className="flex gap-1.5">
-                                        <div className="h-3 w-3 rounded-full bg-red-400" />
-                                        <div className="h-3 w-3 rounded-full bg-amber-400" />
-                                        <div className="h-3 w-3 rounded-full bg-green-400" />
-                                    </div>
-                                    <div className="ml-4 h-6 w-64 bg-slate-50 rounded-full border border-slate-100 flex items-center px-4">
-                                        <div className="h-2 w-20 bg-slate-200 rounded-full" />
-                                    </div>
+                    {/* iOS-style App Preview Card */}
+                    <div className="relative mx-auto max-w-4xl">
+                        {/* Floating Pill Left */}
+                        <div className="absolute -left-6 top-16 z-20 hidden lg:block animate-bounce-slow">
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-white/50"
+                                style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)" }}>
+                                <div className="h-8 w-8 rounded-xl flex items-center justify-center"
+                                    style={{ background: "rgba(52,199,89,0.15)" }}>
+                                    <Zap className="h-4 w-4 text-[#34C759]" />
                                 </div>
-
-                                {/* Actual UI Preview */}
-                                <div className="bg-slate-50 grid grid-cols-[200px_1fr] h-[550px] overflow-hidden">
-                                    {/* Mock Sidebar */}
-                                    <div className="border-r border-slate-200 p-6 space-y-6">
-                                        <div className="h-8 w-32 bg-slate-200 rounded-lg animate-pulse" />
-                                        <div className="space-y-3">
-                                            {[1, 2, 3, 4, 5].map(i => (
-                                                <div key={i} className={`h-8 rounded-lg ${i === 1 ? 'bg-primary/20 cursor-default' : 'bg-slate-100'}`} />
-                                            ))}
-                                        </div>
-                                        <div className="pt-20">
-                                            <div className="h-12 w-full bg-slate-200 rounded-xl" />
-                                        </div>
-                                    </div>
-
-                                    {/* Mock Content */}
-                                    <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
-                                        <div className="flex items-end justify-between">
-                                            <div className="space-y-2">
-                                                <div className="h-4 w-24 bg-slate-200 rounded" />
-                                                <div className="h-8 w-48 bg-slate-300 rounded-lg" />
-                                            </div>
-                                            <div className="flex gap-3">
-                                                <div className="h-10 w-10 rounded-full bg-slate-200" />
-                                                <div className="h-10 w-24 bg-slate-200 rounded-lg" />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-6">
-                                            <div className="glass p-6 rounded-3xl space-y-4 shadow-sm border-slate-200">
-                                                <div className="h-3 w-20 bg-slate-200 rounded" />
-                                                <div className="h-10 w-12 bg-primary/20 rounded-lg" />
-                                                <div className="h-2 w-full bg-slate-100 rounded-full">
-                                                    <div className="h-full w-2/3 bg-primary rounded-full" />
-                                                </div>
-                                            </div>
-                                            <div className="glass p-6 rounded-3xl space-y-4 shadow-sm border-slate-200">
-                                                <div className="h-3 w-20 bg-slate-200 rounded" />
-                                                <div className="h-10 w-12 bg-blue-100 rounded-lg" />
-                                                <div className="h-2 w-full bg-slate-100 rounded-full">
-                                                    <div className="h-full w-4/5 bg-blue-500 rounded-full" />
-                                                </div>
-                                            </div>
-                                            <div className="glass p-6 rounded-3xl space-y-4 shadow-sm border-slate-200">
-                                                <div className="h-3 w-20 bg-slate-200 rounded" />
-                                                <div className="h-10 w-12 bg-amber-100 rounded-lg" />
-                                                <div className="h-2 w-full bg-slate-100 rounded-full">
-                                                    <div className="h-full w-1/2 bg-amber-500 rounded-full" />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-                                            <div className="h-4 w-32 bg-slate-200 rounded mb-6" />
-                                            <div className="h-48 w-full bg-slate-50 rounded-2xl flex items-end gap-2 p-6 justify-between">
-                                                {[45, 75, 55, 95, 65, 85, 50, 70, 90, 60].map((h, i) => (
-                                                    <div key={i} style={{ height: `${h}%` }} className="w-full bg-slate-200 rounded-t-lg transition-all hover:bg-primary/40 cursor-pointer" />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Floating Stats */}
-                            <div className="absolute top-1/4 -left-12 p-6 glass rounded-3xl shadow-2xl border-white animate-float z-20 hidden md:block">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Sync Status</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                                        <Zap className="h-5 w-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-bold text-[#0D2B1D]">99.9%</p>
-                                        <p className="text-[10px] text-emerald-600 font-bold">Operational</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="absolute bottom-1/3 -right-12 p-6 glass rounded-3xl shadow-2xl border-white animate-float-delayed z-20 hidden md:block">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Academic Index</p>
-                                <div className="flex items-center gap-4 font-bold text-2xl text-[#0D2B1D]">
-                                    9.3 <span className="text-xs text-emerald-600 px-2 py-1 bg-emerald-100 rounded-full">+12%</span>
-                                </div>
-                                <div className="mt-4 flex gap-1">
-                                    {[1, 2, 3, 4, 5, 6].map(i => (
-                                        <div key={i} className="h-1 w-6 bg-slate-100 rounded-full overflow-hidden">
-                                            <div className="h-full w-full bg-primary" />
-                                        </div>
-                                    ))}
+                                <div>
+                                    <p className="text-[10px] font-black text-[#8E8E93] uppercase tracking-wider">Sync Status</p>
+                                    <p className="text-sm font-black text-[#1C1C1E]">99.9% <span className="text-[10px] text-[#34C759] font-bold">Live</span></p>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Floating Pill Right */}
+                        <div className="absolute -right-6 bottom-24 z-20 hidden lg:block animate-float-delayed">
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-white/50"
+                                style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)" }}>
+                                <div className="h-8 w-8 rounded-xl flex items-center justify-center"
+                                    style={{ background: "rgba(0,122,255,0.15)" }}>
+                                    <TrendingUp className="h-4 w-4 text-[#007AFF]" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-[#8E8E93] uppercase tracking-wider">AI Match Score</p>
+                                    <p className="text-sm font-black text-[#1C1C1E]">96% <span className="text-[10px] text-[#007AFF] font-bold">+12%</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* macOS Window Frame */}
+                        <div className="rounded-[2.5rem] border overflow-hidden shadow-2xl"
+                            style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(40px)", borderColor: "rgba(0,0,0,0.08)", boxShadow: "0 40px 120px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.5)" }}>
+                            {/* Mac Chrome */}
+                            <div className="flex items-center gap-2 px-6 py-4 border-b" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                                <span className="h-3 w-3 rounded-full bg-[#FF5F57]" />
+                                <span className="h-3 w-3 rounded-full bg-[#FFBD2E]" />
+                                <span className="h-3 w-3 rounded-full bg-[#28C840]" />
+                                <div className="ml-4 flex-1 max-w-xs mx-auto">
+                                    <div className="rounded-lg px-3 py-1.5 text-xs text-center font-medium"
+                                        style={{ background: "rgba(0,0,0,0.04)", color: "#8E8E93" }}>
+                                        intelledge.university/dashboard
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* App Preview */}
+                            <div className="grid" style={{ gridTemplateColumns: "200px 1fr", height: "480px" }}>
+                                {/* Sidebar Preview */}
+                                <div className="border-r p-5 flex flex-col gap-4" style={{ borderColor: "rgba(0,0,0,0.06)", background: "rgba(250,250,252,0.8)" }}>
+                                    <div className="h-8 w-28 rounded-xl animate-pulse" style={{ background: "rgba(0,0,0,0.07)" }} />
+                                    <div className="flex flex-col gap-2">
+                                        {[
+                                            { label: "Dashboard", active: true, color: "#34C759" },
+                                            { label: "Academics", active: false },
+                                            { label: "Placement Hub", active: false },
+                                            { label: "Analytics", active: false },
+                                            { label: "AI Copilot", active: false },
+                                        ].map((item, i) => (
+                                            <div key={i} className="h-9 rounded-xl px-3 flex items-center gap-2"
+                                                style={{ background: item.active ? "rgba(52,199,89,0.12)" : "transparent" }}>
+                                                <div className="h-2 w-2 rounded-full" style={{ background: item.active ? "#34C759" : "rgba(0,0,0,0.1)" }} />
+                                                <div className="h-2 rounded flex-1" style={{ background: item.active ? "rgba(52,199,89,0.3)" : "rgba(0,0,0,0.08)" }} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-auto">
+                                        <div className="h-16 rounded-2xl p-3" style={{ background: "rgba(52,199,89,0.08)", border: "1px solid rgba(52,199,89,0.2)" }}>
+                                            <div className="h-2 w-20 rounded mb-2" style={{ background: "rgba(52,199,89,0.4)" }} />
+                                            <div className="h-2 w-16 rounded" style={{ background: "rgba(0,0,0,0.08)" }} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Main Content Preview */}
+                                <div className="p-8 overflow-hidden flex flex-col gap-6">
+                                    {/* Header */}
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <div className="h-3 w-24 rounded mb-2" style={{ background: "rgba(0,0,0,0.06)" }} />
+                                            <div className="h-7 w-52 rounded-xl" style={{ background: "rgba(0,0,0,0.08)" }} />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="h-9 w-9 rounded-full" style={{ background: "rgba(0,0,0,0.06)" }} />
+                                            <div className="h-9 w-28 rounded-xl" style={{ background: "rgba(0,0,0,0.06)" }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Stats Row */}
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {[
+                                            { c: "#34C759", v: "8.7", l: "CGPA" },
+                                            { c: "#007AFF", v: "87%", l: "Attendance" },
+                                            { c: "#FF9F0A", v: "96%", l: "AI Match" },
+                                            { c: "#5E5CE6", v: "12", l: "Tasks" },
+                                        ].map((s, i) => (
+                                            <div key={i} className="rounded-2xl p-3"
+                                                style={{ background: `rgba(${s.c === "#34C759" ? "52,199,89" : s.c === "#007AFF" ? "0,122,255" : s.c === "#FF9F0A" ? "255,159,10" : "94,92,230"},0.08)` }}>
+                                                <div className="h-5 w-10 rounded-lg mb-1" style={{ background: `${s.c}30` }} />
+                                                <div className="h-2 w-full rounded" style={{ background: `${s.c}20` }} />
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Chart Mock */}
+                                    <div className="flex-1 rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.8)", border: "1px solid rgba(0,0,0,0.05)" }}>
+                                        <div className="h-3 w-28 rounded mb-4" style={{ background: "rgba(0,0,0,0.07)" }} />
+                                        <div className="flex items-end gap-1.5 h-24">
+                                            {[35, 60, 50, 80, 65, 90, 55, 75, 85, 70, 95, 60].map((h, i) => (
+                                                <div key={i} className="flex-1 rounded-t-lg transition-all hover:opacity-80"
+                                                    style={{ height: `${h}%`, background: i === 10 ? "linear-gradient(to top, #34C759, #007AFF)" : "rgba(0,0,0,0.07)" }} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Scroll cue */}
+                    <div className="mt-16 flex flex-col items-center gap-2 opacity-40">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-[#8E8E93]">Scroll to explore</p>
+                        <ChevronDown className="h-4 w-4 text-[#8E8E93] animate-bounce" />
                     </div>
                 </div>
             </main>
 
-            {/* Trusted By Section */}
-            <section className="bg-white py-24 relative">
-                <div className="max-w-7xl mx-auto px-8 text-center">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] mb-12">Empowering Digital Foundations</p>
-                    <div className="grid grid-cols-2 md:grid-cols-5 items-center gap-12 md:gap-20 opacity-30 grayscale group hover:grayscale-0 transition-all duration-700">
-                        <div className="flex items-center justify-center gap-2">
-                            <Layers className="h-6 w-6" />
-                            <span className="text-xl font-bold tracking-tighter">METRICLY</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                            <Box className="h-6 w-6" />
-                            <span className="text-xl font-bold tracking-tighter">VELOX</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                            <Circle className="h-6 w-6" />
-                            <span className="text-xl font-bold tracking-tighter">NEURALINK</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                            <Square className="h-6 w-6" />
-                            <span className="text-xl font-bold tracking-tighter">FLUXBIT</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                            <Triangle className="h-6 w-6" />
-                            <span className="text-xl font-bold tracking-tighter">TASKLY</span>
-                        </div>
+            {/* ── STATS SECTION ── */}
+            <section id="stats" className="py-20 px-6">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {stats.map((s, i) => (
+                            <div key={i} className="rounded-3xl p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg"
+                                style={{ background: "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 2px 20px rgba(0,0,0,0.04)" }}>
+                                <s.icon className="h-6 w-6 mx-auto mb-3 text-[#34C759]" />
+                                <p className="text-3xl font-black text-[#1C1C1E] mb-1">{s.value}</p>
+                                <p className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider">{s.label}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section id="features" className="py-32 px-8 bg-slate-50/50">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
-                        <div className="max-w-xl">
-                            <h2 className="text-4xl md:text-5xl font-bold text-[#0D2B1D] mb-6 leading-tight">Precision Intelligence <br /> for Next-Gen Learning</h2>
-                            <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                                Built with neural architectures to predict performance gaps and
-                                streamline the academic journey for every stakeholder.
-                            </p>
+            {/* ── FEATURES SECTION ── */}
+            <section id="features" className="py-24 px-6">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
+                            style={{ background: "rgba(0,122,255,0.08)", border: "1px solid rgba(0,122,255,0.15)" }}>
+                            <Sparkles className="h-3.5 w-3.5 text-[#007AFF]" />
+                            <span className="text-[11px] font-bold text-[#007AFF] uppercase tracking-widest">Core Intelligence</span>
                         </div>
-                        <button className="text-[#0D2B1D] font-bold flex items-center gap-2 group hover:text-primary transition-colors">
-                            Explore All Modules <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        <h2 className="text-4xl md:text-5xl font-black text-[#1C1C1E] mb-5 tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                            Precision tools for<br />next-gen learners
+                        </h2>
+                        <p className="text-lg text-[#48484A] max-w-xl mx-auto font-medium">
+                            Built with neural architectures that predict gaps and streamline the academic journey for every stakeholder.
+                        </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[
-                            {
-                                icon: Bot,
-                                title: "AI Academic Copilot",
-                                desc: "Dynamic multilingual support with deep contextual understanding of course materials.",
-                                color: "emerald"
-                            },
-                            {
-                                icon: BarChart3,
-                                title: "Growth Analytics",
-                                desc: "Visual data tracking for students to monitor their progress and identify potential career paths.",
-                                color: "blue"
-                            },
-                            {
-                                icon: Layout,
-                                title: "Resource Vault",
-                                desc: "Centralized hub for all academic documents, projects, and institutional resources.",
-                                color: "amber"
-                            }
-                        ].map((feature, i) => (
-                            <div key={i} className="group bg-white p-10 rounded-[3rem] border border-slate-100 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.03)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] transition-all hover:-translate-y-2">
-                                <div className={`h-16 w-16 flex items-center justify-center rounded-2xl mb-8 transition-transform group-hover:scale-110 group-hover:rotate-3 ${feature.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
-                                        feature.color === 'blue' ? 'bg-blue-50 text-blue-600' :
-                                            'bg-amber-50 text-amber-600'
-                                    }`}>
-                                    <feature.icon className="h-8 w-8" />
+                    <div className="grid md:grid-cols-3 gap-5">
+                        {features.map((f, i) => (
+                            <div key={i}
+                                onMouseEnter={() => setActiveFeature(i)}
+                                className={`group rounded-[2rem] p-8 cursor-default transition-all duration-500 ${activeFeature === i ? "scale-[1.02] shadow-2xl" : "hover:scale-[1.01]"}`}
+                                style={{
+                                    background: activeFeature === i ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)",
+                                    backdropFilter: "blur(20px)",
+                                    border: `1px solid ${activeFeature === i ? f.color + "30" : "rgba(0,0,0,0.06)"}`,
+                                    boxShadow: activeFeature === i ? `0 20px 60px ${f.color}15` : "0 2px 20px rgba(0,0,0,0.04)"
+                                }}>
+                                <div className="h-14 w-14 rounded-2xl flex items-center justify-center mb-6 transition-all group-hover:scale-110 group-hover:rotate-3"
+                                    style={{ background: f.bg, border: `1px solid ${f.color}20` }}>
+                                    <f.icon className="h-7 w-7" style={{ color: f.color }} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-[#0D2B1D] mb-4">{feature.title}</h3>
-                                <p className="text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
-                                <div className="mt-8 pt-6 border-t border-slate-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="text-xs font-bold text-slate-400 flex items-center gap-2">
-                                        Module fully operational <Zap className="h-3 w-3 text-primary" />
-                                    </span>
+                                <h3 className="text-xl font-black text-[#1C1C1E] mb-3">{f.title}</h3>
+                                <p className="text-[#48484A] font-medium leading-relaxed text-sm">{f.desc}</p>
+                                <div className="mt-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <CheckCircle className="h-3.5 w-3.5" style={{ color: f.color }} />
+                                    <span className="text-xs font-bold" style={{ color: f.color }}>Module fully operational</span>
                                 </div>
                             </div>
                         ))}
@@ -285,59 +394,206 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* Footer / Final CTA */}
-            <footer className="bg-[#0D2B1D] text-white pt-32 pb-16 px-8 rounded-t-[4rem] relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-32">
-                        <div className="h-20 w-20 flex items-center justify-center rounded-[2rem] bg-emerald-500/10 backdrop-blur-xl border border-white/5 mx-auto mb-10">
-                            <GraduationCap className="h-10 w-10 text-emerald-400" />
+            {/* ── MODULES SECTION ── */}
+            <section id="modules" className="py-24 px-6">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
+                            style={{ background: "rgba(94,92,230,0.08)", border: "1px solid rgba(94,92,230,0.15)" }}>
+                            <Layout className="h-3.5 w-3.5 text-[#5E5CE6]" />
+                            <span className="text-[11px] font-bold text-[#5E5CE6] uppercase tracking-widest">Platform Modules</span>
                         </div>
-                        <h2 className="text-4xl md:text-6xl font-bold mb-10 leading-[1.1]">Bridge the gap between <br /> education and career.</h2>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                            <button
-                                onClick={() => navigate("/login?mode=signup")}
-                                className="bg-emerald-500 text-white px-12 py-5 rounded-2xl font-bold text-lg shadow-[0_20px_50px_-10px_rgba(16,185,129,0.3)] hover:bg-emerald-400 hover:scale-105 transition-all flex items-center gap-3 group"
-                            >
-                                Start Your Sync <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                            </button>
-                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black text-[#1C1C1E] mb-5 tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                            Everything you need,<br />nothing you don't
+                        </h2>
                     </div>
 
-                    <div className="flex flex-col md:flex-row items-center justify-between pt-16 border-t border-white/5 gap-10">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
-                                <GraduationCap className="h-5 w-5" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {modules.map((m, i) => (
+                            <div key={i} className="group rounded-3xl p-6 transition-all hover:-translate-y-1 hover:shadow-xl cursor-default"
+                                style={{ background: "rgba(255,255,255,0.8)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 2px 20px rgba(0,0,0,0.04)" }}>
+                                <div className="h-12 w-12 rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110"
+                                    style={{ background: `${m.color}12` }}>
+                                    <m.icon className="h-6 w-6" style={{ color: m.color }} />
+                                </div>
+                                <h3 className="text-base font-black text-[#1C1C1E] mb-1.5">{m.label}</h3>
+                                <p className="text-xs text-[#8E8E93] font-medium leading-relaxed">{m.desc}</p>
                             </div>
-                            <span className="text-lg font-bold tracking-tight">IntellEdge AI</span>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ── TESTIMONIALS ── */}
+            <section className="py-24 px-6">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl md:text-5xl font-black text-[#1C1C1E] mb-4 tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                            Loved by students
+                        </h2>
+                        <p className="text-lg text-[#48484A] font-medium">Real results from real learners across India.</p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-5">
+                        {testimonials.map((t, i) => (
+                            <div key={i} className="rounded-3xl p-7 transition-all hover:-translate-y-1 hover:shadow-xl"
+                                style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 2px 20px rgba(0,0,0,0.04)" }}>
+                                <div className="flex mb-4 gap-0.5">
+                                    {[...Array(5)].map((_, j) => (
+                                        <Star key={j} className="h-4 w-4 text-[#FF9F0A] fill-[#FF9F0A]" />
+                                    ))}
+                                </div>
+                                <p className="text-sm text-[#3A3A3C] font-medium leading-relaxed mb-6 italic">"{t.text}"</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-2xl flex items-center justify-center font-black text-white text-sm"
+                                        style={{ background: "linear-gradient(135deg, #0D2B1D, #34C759)" }}>
+                                        {t.avatar}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-[#1C1C1E]">{t.name}</p>
+                                        <p className="text-[11px] text-[#8E8E93] font-semibold">{t.role}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ── NETWORK SECTION ── */}
+            <section id="network" className="py-24 px-6">
+                <div className="max-w-6xl mx-auto">
+                    <div className="rounded-[3rem] p-14 text-center relative overflow-hidden"
+                        style={{ background: "linear-gradient(135deg, #0D2B1D 0%, #1a4a2e 50%, #0D2B1D 100%)", boxShadow: "0 40px 100px rgba(13,43,29,0.4)" }}>
+                        {/* Decorative Blobs */}
+                        <div className="absolute top-0 left-0 w-64 h-64 rounded-full -translate-x-1/2 -translate-y-1/2"
+                            style={{ background: "radial-gradient(circle, rgba(52,199,89,0.15) 0%, transparent 70%)" }} />
+                        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full translate-x-1/2 translate-y-1/2"
+                            style={{ background: "radial-gradient(circle, rgba(0,122,255,0.15) 0%, transparent 70%)" }} />
+
+                        <div className="relative z-10">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8"
+                                style={{ background: "rgba(52,199,89,0.15)", border: "1px solid rgba(52,199,89,0.2)" }}>
+                                <Globe className="h-4 w-4 text-[#34C759]" />
+                                <span className="text-xs font-bold text-[#34C759] uppercase tracking-widest">Hiring Network 2026</span>
+                            </div>
+                            <h2 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight" style={{ letterSpacing: "-0.02em" }}>
+                                Bridge education<br />and career
+                            </h2>
+                            <p className="text-lg text-white/60 max-w-xl mx-auto mb-10 font-medium">
+                                Connect with 500+ companies actively recruiting through IntellEdge's AI-powered placement network.
+                            </p>
+
+                            <div className="flex flex-wrap justify-center gap-3 mb-10">
+                                {["TCS", "Infosys", "Microsoft", "Google", "Amazon", "Wipro", "Anthropic", "Adobe"].map(c => (
+                                    <span key={c} className="px-4 py-2 rounded-xl text-sm font-bold text-white/80"
+                                        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                                        {c}
+                                    </span>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <button onClick={() => navigate("/login?mode=signup")}
+                                    className="px-10 py-4 rounded-2xl font-black text-base text-[#0D2B1D] hover:scale-105 transition-all shadow-lg active:scale-95"
+                                    style={{ background: "#34C759", boxShadow: "0 8px 30px rgba(52,199,89,0.4)" }}>
+                                    Start Your Journey →
+                                </button>
+                                <button onClick={() => navigate("/login")}
+                                    className="px-10 py-4 rounded-2xl font-bold text-base text-white border hover:bg-white/10 transition-all"
+                                    style={{ borderColor: "rgba(255,255,255,0.2)" }}>
+                                    Already a member? Sign in
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── FOOTER ── */}
+            <footer className="px-6 pt-16 pb-10">
+                <div className="max-w-6xl mx-auto">
+                    <div className="rounded-[2.5rem] px-10 pt-12 pb-8"
+                        style={{ background: "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 2px 20px rgba(0,0,0,0.04)" }}>
+
+                        {/* Footer Top */}
+                        <div className="grid md:grid-cols-4 gap-10 mb-12">
+                            {/* Brand */}
+                            <div className="md:col-span-2">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="h-9 w-9 rounded-2xl flex items-center justify-center"
+                                        style={{ background: "linear-gradient(135deg, #0D2B1D 0%, #1a5c3a 100%)" }}>
+                                        <GraduationCap className="h-5 w-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <span className="text-[17px] font-bold tracking-tight text-[#1C1C1E]">IntellEdge</span>
+                                        <span className="text-[9px] font-semibold block text-[#34C759] uppercase tracking-widest leading-none">University AI</span>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-[#8E8E93] font-medium leading-relaxed max-w-xs">
+                                    Transforming academic journeys with AI-powered insights, real-time placement matching, and data-driven intelligence.
+                                </p>
+                                <div className="flex items-center gap-2 mt-5 text-xs text-[#34C759] font-bold">
+                                    <span className="h-2 w-2 rounded-full bg-[#34C759] animate-pulse" />
+                                    All systems operational · v4.2.2-STABLE
+                                </div>
+                            </div>
+
+                            {/* Links */}
+                            <div>
+                                <h4 className="text-xs font-black text-[#1C1C1E] uppercase tracking-widest mb-4">Platform</h4>
+                                <ul className="space-y-3">
+                                    {["Student Dashboard", "Academic Vault", "Placement Hub", "AI Copilot", "ATS Checker"].map(item => (
+                                        <li key={item}>
+                                            <a href="#" className="text-sm text-[#8E8E93] font-medium hover:text-[#1C1C1E] transition-colors">{item}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-xs font-black text-[#1C1C1E] uppercase tracking-widest mb-4">Company</h4>
+                                <ul className="space-y-3">
+                                    {["About Us", "Privacy Policy", "Terms of Service", "Support", "Contact"].map(item => (
+                                        <li key={item}>
+                                            <a href="#" className="text-sm text-[#8E8E93] font-medium hover:text-[#1C1C1E] transition-colors">{item}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
 
-                        <div className="flex flex-wrap justify-center gap-10 font-semibold text-slate-400 text-sm">
-                            <a href="#" className="hover:text-white transition-colors">Infrastructure</a>
-                            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                            <a href="#" className="hover:text-white transition-colors">Terms</a>
-                            <a href="#" className="hover:text-white transition-colors">Support</a>
+                        {/* Footer Bottom */}
+                        <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4"
+                            style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                            <p className="text-xs text-[#8E8E93] font-medium">
+                                © 2026 IntellEdge University AI · Inceptrix Systems · All rights reserved.
+                            </p>
+                            <div className="flex items-center gap-6">
+                                {["Privacy", "Terms", "Infrastructure", "Support"].map(item => (
+                                    <a key={item} href="#"
+                                        className="text-xs font-semibold text-[#8E8E93] hover:text-[#1C1C1E] transition-colors">
+                                        {item}
+                                    </a>
+                                ))}
+                            </div>
                         </div>
-
-                        <p className="text-slate-500 text-sm">© 2026 Neural Systems. All rights reserved.</p>
                     </div>
                 </div>
             </footer>
+
+            {/* Animations */}
+            <style>{`
+        @keyframes bounceSlow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-slow {
+          animation: bounceSlow 4s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: bounceSlow 4s ease-in-out infinite 2s;
+        }
+      `}</style>
         </div>
     );
-}
-
-// Simple Icon Components for trust section
-function Box({ className }: { className?: string }) {
-    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg>
-}
-function Circle({ className }: { className?: string }) {
-    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /></svg>
-}
-function Square({ className }: { className?: string }) {
-    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /></svg>
-}
-function Triangle({ className }: { className?: string }) {
-    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /></svg>
 }

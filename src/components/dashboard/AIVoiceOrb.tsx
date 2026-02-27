@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Mic, MicOff, MessageSquare, X, Languages, Sparkles, TrendingUp, AlertTriangle, Calendar, Target, Volume2, Bot } from "lucide-react";
+import { Mic, MicOff, MessageSquare, X, Languages, Sparkles, TrendingUp, AlertTriangle, Calendar, Target, Volume2, Bot, Loader2 } from "lucide-react";
+import { getAIResponse, AIResponse } from "@/lib/gemini";
+import IntellEdgeDB from "@/lib/db";
 
 type OrbMode = "idle" | "listening" | "processing" | "speaking" | "briefing";
 type Language = "en" | "kn" | "hi";
@@ -18,67 +20,55 @@ export function AIVoiceOrb() {
     const navigate = useNavigate();
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Translations / Localized Content
-    const content = {
-        en: {
-            greeting: `Hello, ${firstName}.`,
-            briefing: "Your neural dashboard is synchronized. Systems report 100% operational status.",
-            atRisk: "Your academic parameters are within safe limits. Maintain current performance.",
-            placement: "New institutional placements are being verified for the 2026 drive.",
-            processing: "Syncing with IntelliEdge Neural Core..."
-        },
-        kn: {
-            greeting: `ನಮಸ್ಕಾರ, ${firstName}.`,
-            briefing: "ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲೈವ್ ಆಗಿದೆ. ಎಲ್ಲಾ ವ್ಯವಸ್ಥೆಗಳು ಸರಿಯಾಗಿ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿವೆ.",
-            atRisk: "ನಿಮ್ಮ ಶೈಕ್ಷಣಿಕ ಪ್ರಗತಿ ಉತ್ತಮವಾಗಿದೆ. ಇದೇ ರೀತಿ ಮುಂದುವರಿಸಿ.",
-            placement: "2026ರ ಹೊಸ ಉದ್ಯೋಗಾವಕಾಶಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ.",
-            processing: "ಎಐ ಕೋರ್‌ನೊಂದಿಗೆ ಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ..."
-        },
-        hi: {
-            greeting: `नमस्ते, ${firstName}.`,
-            briefing: "आपका डैशबोर्ड सक्रिय है। सभी प्रणालियां सुचारू रूप से कार्य कर रही हैं।",
-            atRisk: "आपकी शैक्षणिक प्रगति अच्छी है। इसे बनाए रखें।",
-            placement: "2026 के नए प्लेसमेंट अवसरों की जाँच की जा रही है।",
-            processing: "एआई कोर के साथ सिंक हो रहा है..."
-        }
+    const currentContent = {
+        processing: "Syncing with IntelliEdge Neural Core..."
     };
-
-    const currentContent = content[lang];
 
     const toggleLang = () => {
         const nextLang = lang === "en" ? "kn" : lang === "kn" ? "hi" : "en";
         setLang(nextLang);
 
-        // Speak confirmation in new language
-        const confirmations = {
-            en: "Language changed to English.",
-            kn: "ಭಾಷೆಯನ್ನು ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.",
-            hi: "भाषा बदलकर हिंदी कर दी गई है।"
+        // Speak confirmation in new language via AI
+        const fetchConfirmation = async () => {
+            setMode("processing");
+            const aiResponse = await getAIResponse(
+                `Confirm that the language has been switched to ${nextLang === 'en' ? 'English' : nextLang === 'kn' ? 'Kannada' : 'Hindi'}.`,
+                {},
+                nextLang
+            );
+            setMessage(aiResponse.message);
+            speak(aiResponse.message);
         };
-        speak(confirmations[nextLang]);
+        fetchConfirmation();
     };
 
     // Proactive Briefing on Dashboard or Login
     useEffect(() => {
         // Trigger on Dashboard or Landing
         if ((location.pathname === "/" || location.pathname === "/dashboard") && mode === "idle") {
-            const teacherRecords = JSON.parse(localStorage.getItem("teacher_student_records") || "[]");
-            const myRecord = teacherRecords.find((r: any) => r.name === studentData.name);
+            const fetchBriefing = async () => {
+                const records = await IntellEdgeDB.getRecords();
+                const myRecord = records.find((r: any) => r.name === studentData.name);
 
-            let statusDetail = currentContent.briefing;
-            if (myRecord) {
-                const att = parseInt(myRecord.attendance);
-                if (att < 75) statusDetail = "System Alert: Your attendance dropped to " + att + "%. Please contact faculty.";
-                else if (att > 90) statusDetail = "Exceptional status verified. Attendance is a perfect " + att + "%.";
-            }
+                const prompt = "Generate a short, proactive greeting for the dashboard. Mention system status (100% operational) and a quick highlight of my status (like attendance or progress).";
+                const context = {
+                    studentName: studentData.name,
+                    record: myRecord,
+                    systemStatus: "100% operational"
+                };
 
-            setTimer(3000, () => {
-                setMode("briefing");
-                setIsOpen(true);
-                const fullMsg = currentContent.greeting + " " + statusDetail;
-                setMessage(fullMsg);
-                speak(fullMsg);
-            });
+                // We use a small delay to not overwhelm the user immediately
+                setTimer(3000, async () => {
+                    setMode("processing");
+                    setIsOpen(true);
+
+                    const aiResponse = await getAIResponse(prompt, context, lang);
+                    setMessage(aiResponse.message);
+                    speak(aiResponse.message);
+                });
+            };
+
+            fetchBriefing();
         }
     }, [location.pathname]);
 
@@ -104,14 +94,17 @@ export function AIVoiceOrb() {
             window.speechSynthesis.cancel();
         } else {
             setIsOpen(true);
-            const welcomes = {
-                en: `Hello ${firstName}, I am your university AI. How can I help you?`,
-                kn: `ನಮಸ್ಕಾರ ${firstName}, ನಾನು ನಿಮ್ಮ ವಿಶ್ವವಿದ್ಯಾಲಯದ ಎಐ. ನಾನು ದಯವಿಟ್ಟು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?`,
-                hi: `नमस्ते ${firstName}, मैं आपकी यूनिवर्सिटी एआई हूँ। मैं आपकी क्या मदद कर सकता हूँ?`
+            const fetchWelcome = async () => {
+                setMode("processing");
+                const aiResponse = await getAIResponse(
+                    `Greet the user ${firstName} and ask how you can help.`,
+                    { studentName: firstName },
+                    lang
+                );
+                setMessage(aiResponse.message);
+                speak(aiResponse.message);
             };
-            const fullWelcome = welcomes[lang];
-            setMessage(fullWelcome);
-            speak(fullWelcome);
+            fetchWelcome();
         }
     };
 
@@ -124,6 +117,7 @@ export function AIVoiceOrb() {
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = false;
             recognitionRef.current.interimResults = false;
+            recognitionRef.current.lang = lang === "en" ? "en-US" : lang === "kn" ? "kn-IN" : "hi-IN";
 
             recognitionRef.current.onresult = (event: any) => {
                 const transcript = event.results[0][0].transcript;
@@ -134,11 +128,18 @@ export function AIVoiceOrb() {
                 if (mode === "listening") setMode("idle");
             };
 
-            recognitionRef.current.onerror = () => {
+            recognitionRef.current.onerror = (e: any) => {
                 setMode("idle");
+                const errMsg = lang === "en"
+                    ? "I couldn't hear you clearly. Please try again."
+                    : lang === "kn"
+                        ? "ನಾನು ಸ್ಪಷ್ಟವಾಗಿ ಕೇಳಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+                        : "मैं स्पष्ट रूप से नहीं सुन सका। कृपया पुनः प्रयास करें।";
+                setMessage(errMsg);
             };
         }
     }, [lang, mode]);
+
 
     const speak = (text: string) => {
         if (isQuietMode) return;
@@ -184,85 +185,48 @@ export function AIVoiceOrb() {
         }
     }, []);
 
-    const processVoiceCommand = (text: string) => {
+    const processVoiceCommand = async (text: string) => {
         setMode("processing");
-        const lower = text.toLowerCase();
-        const navigateTo = (path: string) => {
-            navigate(path);
-            setIsOpen(false);
-        };
+        setMessage("Processing query...");
 
-        setTimer(1200, () => {
-            let response = "";
+        try {
+            // Gather contextual data for the AI
+            const records = await IntellEdgeDB.getRecords();
+            const alerts = await IntellEdgeDB.getAlerts(studentData.name);
 
-            // Language switching via voice
-            if (lower.includes("english") || lower.includes("ಇಂಗ್ಲಿಷ್") || lower.includes("अंग्रेजी")) {
-                setLang("en");
-                response = "Switched to English.";
-            } else if (lower.includes("kannada") || lower.includes("ಕನ್ನಡ") || lower.includes("ಕನ್ನಡಕ್ಕೆ")) {
-                setLang("kn");
-                response = "ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.";
-            } else if (lower.includes("hindi") || lower.includes("ಹಿಂದಿ") || lower.includes("हिंदी")) {
-                setLang("hi");
-                response = "हिंदी में बदल दिया गया है।";
+            const context = {
+                studentName: studentData.name,
+                semester: studentData.semester,
+                records: records.filter(r => r.name === studentData.name),
+                alerts: alerts,
+                currentPath: location.pathname
+            };
+
+            const aiResponse: AIResponse = await getAIResponse(text, context, lang);
+
+            // Handle language switching if suggested by AI
+            if (aiResponse.language !== lang) {
+                setLang(aiResponse.language);
             }
 
-            if (response) {
-                setMessage(response);
-                speak(response);
-                return;
-            }
+            setMessage(aiResponse.message);
+            speak(aiResponse.message);
 
-            if (lang === "kn") {
-                if (lower.includes("ಹಾಜರಾತಿ") || lower.includes("ಅಟೆಂಡೆನ್ಸ್")) response = currentContent.atRisk;
-                else if (lower.includes("ಪ್ಲೇಸ್ಮೆಂಟ್") || lower.includes("ಕೆಲಸ") || lower.includes("ನೌಕರಿ")) response = currentContent.placement;
-                else if (lower.includes("ಪ್ರಾಜೆಕ್ಟ್") || lower.includes("ಪ್ರೊಜೆಕ್ಟ್")) {
-                    response = "ನಿಮ್ಮ ಪ್ರಾಜೆಕ್ಟ್ ಪುಟಕ್ಕೆ ಕರೆದೊಯ್ಯುತ್ತಿದ್ದೇನೆ.";
-                    navigateTo("/projects");
-                } else if (lower.includes("ವರದಿ") || lower.includes("ಅನಾಲಿಟಿಕ್ಸ್")) {
-                    response = "ನಿಮ್ಮ ಪ್ರಗತಿಯ ವರದಿಯನ್ನು ತೋರಿಸುತ್ತಿದ್ದೇನೆ.";
-                    navigateTo("/analytics");
-                } else if (lower.includes("ಪ್ರೊಫೈಲ್") || lower.includes("ನನ್ನ ಮಾಹಿತಿ")) {
-                    response = "ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಪುಟ ಇಲ್ಲಿದೆ.";
-                    navigateTo("/profile");
-                } else if (lower.includes("ಹಲೋ") || lower.includes("ನಮಸ್ಕಾರ")) response = "ನಮಸ್ಕಾರ! ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?";
-                else response = "ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಹಾಜರಾತಿ, ಪ್ಲೇಸ್ಮೆಂಟ್ ಅಥವಾ ಪ್ರಾಜೆಕ್ಟ್ ಬಗ್ಗೆ ಕೇಳಿ.";
-            } else if (lang === "hi") {
-                if (lower.includes("उपस्थिति") || lower.includes("अटेंडेंस")) response = currentContent.atRisk;
-                else if (lower.includes("प्लेसमेंट") || lower.includes("नौकरी")) response = currentContent.placement;
-                else if (lower.includes("प्रोजेक्ट")) {
-                    response = "मैं आपको प्रोजेक्ट पेज पर ले जा रहा हूँ।";
-                    navigateTo("/projects");
-                } else if (lower.includes("रिपोर्ट") || lower.includes("एनालिटिक्स")) {
-                    response = "आपकी प्रगति रिपोर्ट यहाँ है।";
-                    navigateTo("/analytics");
-                } else if (lower.includes("प्रोफाइल")) {
-                    response = "आपकी प्रोफाइल खोली जा रही है।";
-                    navigateTo("/profile");
-                } else if (lower.includes("नमस्ते") || lower.includes("हेलो")) response = "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ?";
-                else response = "क्षमा करें, मुझे समझ नहीं आया। कृपया उपस्थिति, प्लेसमेंट या प्रोजेक्ट के बारे में पूछें।";
-            } else {
-                if (lower.includes("attendance") || lower.includes("low")) response = currentContent.atRisk;
-                else if (lower.includes("placement") || lower.includes("job") || lower.includes("hiring")) response = currentContent.placement;
-                else if (lower.includes("project") || lower.includes("repo")) {
-                    response = "Opening your project vault.";
-                    navigateTo("/projects");
-                } else if (lower.includes("analytics") || lower.includes("growth") || lower.includes("report")) {
-                    response = "Synchronizing with your growth analytics.";
-                    navigateTo("/analytics");
-                } else if (lower.includes("profile") || lower.includes("account") || lower.includes("edit")) {
-                    response = "Accessing your intelligence profile.";
-                    navigateTo("/profile");
-                } else if (lower.includes("dashboard") || lower.includes("home")) {
-                    response = "Returning to main dashboard.";
-                    navigateTo("/dashboard");
-                } else if (lower.includes("cgpa") || lower.includes("marks")) response = `Your current CGPA is projected at 7.8. Stay focused.`;
-                else response = "I can navigate to projects, analytics, profile, or tell you about attendance and placements.";
+            // Handle navigation action
+            if (aiResponse.action?.type === "navigate" && aiResponse.action.path) {
+                const path = aiResponse.action.path;
+                setTimer(2000, () => {
+                    navigate(path);
+                    setIsOpen(false);
+                });
             }
-
-            setMessage(response);
-            speak(response);
-        });
+        } catch (error) {
+            console.error("AI Error:", error);
+            const errorMsg = "I'm having trouble connecting to my neural network. Please check your connection.";
+            setMessage(errorMsg);
+            speak(errorMsg);
+            setMode("idle");
+        }
     };
 
     const handleVoice = () => {
@@ -323,12 +287,18 @@ export function AIVoiceOrb() {
                         </div>
 
                         {/* Visual Waveform (Simulated) */}
+                        {mode === "processing" && (
+                            <div className="mb-6 flex flex-col items-center justify-center gap-2">
+                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                <span className="text-[10px] text-muted-foreground animate-pulse">Analyzing Neural Core...</span>
+                            </div>
+                        )}
                         {(mode === "listening" || mode === "speaking") && (
                             <div className="mb-6 flex items-center justify-center gap-1 h-8">
                                 {[...Array(12)].map((_, i) => (
                                     <div
                                         key={i}
-                                        className="w-1 bg-primary rounded-full animate-bounce"
+                                        className={`w-1 rounded-full animate-bounce ${mode === "listening" ? "bg-red-500" : "bg-primary"}`}
                                         style={{
                                             height: `${Math.random() * 100 + 20}%`,
                                             animationDuration: `${Math.random() * 0.5 + 0.5}s`,
@@ -341,11 +311,17 @@ export function AIVoiceOrb() {
 
                         {/* Quick Actions */}
                         <div className="grid grid-cols-2 gap-2">
-                            <button className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 p-2.5 text-left transition-all hover:bg-accent">
+                            <button
+                                onClick={() => processVoiceCommand("Optimize my week based on my attendance and subjects")}
+                                className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 p-2.5 text-left transition-all hover:bg-accent"
+                            >
                                 <Calendar className="h-3.5 w-3.5 text-primary" />
                                 <span className="text-[10px] font-bold text-foreground">Optimize Week</span>
                             </button>
-                            <button className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 p-2.5 text-left transition-all hover:bg-accent">
+                            <button
+                                onClick={() => processVoiceCommand("Am I ready for my next exams? Analyze my records.")}
+                                className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 p-2.5 text-left transition-all hover:bg-accent"
+                            >
                                 <Target className="h-3.5 w-3.5 text-primary" />
                                 <span className="text-[10px] font-bold text-foreground">Am I Ready?</span>
                             </button>
@@ -357,7 +333,7 @@ export function AIVoiceOrb() {
                             <Volume2 className="h-5 w-5" />
                         </div>
                         <p className="text-[10px] text-muted-foreground italic">
-                            "Speaking in {lang === "en" ? "English" : "Kannada"}... Use voice commands to execute actions."
+                            "Speaking in {lang === "en" ? "English" : lang === "kn" ? "ಕನ್ನಡ" : "हिंदी"}... Use voice commands to execute actions."
                         </p>
                     </div>
                 </div>

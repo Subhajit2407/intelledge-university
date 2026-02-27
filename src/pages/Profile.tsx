@@ -17,12 +17,15 @@ export default function Profile() {
         profilePic: ""
     });
 
+    const role = localStorage.getItem("intelledge_role");
+
     useEffect(() => {
-        const savedData = localStorage.getItem("student_profile_data");
+        const key = role === 'teacher' ? "teacher_profile_data" : "student_profile_data";
+        const savedData = localStorage.getItem(key);
         if (savedData) {
             setProfileData(JSON.parse(savedData));
         }
-    }, []);
+    }, [role]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -37,9 +40,11 @@ export default function Profile() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        localStorage.setItem("student_profile_data", JSON.stringify(profileData));
-        localStorage.setItem("student_setup_complete", "true");
-        toast.success("Profile updated successfully!");
+        const key = role === 'teacher' ? "teacher_profile_data" : "student_profile_data";
+        localStorage.setItem(key, JSON.stringify(profileData));
+        if (role === 'student') localStorage.setItem("student_setup_complete", "true");
+        else localStorage.setItem("teacher_setup_complete", "true");
+        toast.success("Intelligence profile updated successfully!");
     };
 
     return (
@@ -57,8 +62,12 @@ export default function Profile() {
                                 <ArrowLeft className="h-5 w-5" />
                             </button>
                             <div>
-                                <h1 className="text-2xl font-black italic tracking-tight">Intelligence Profile</h1>
-                                <p className="text-sm text-muted-foreground">Manage your academic identity and system parameters</p>
+                                <h1 className="text-2xl font-black italic tracking-tight">
+                                    {role === 'teacher' ? 'Faculty Identity Node' : 'Intelligence Profile'}
+                                </h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {role === 'teacher' ? 'Manage your teaching credentials and institutional presence' : 'Manage your academic identity and system parameters'}
+                                </p>
                             </div>
                         </div>
 
@@ -81,17 +90,17 @@ export default function Profile() {
                                             <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                                         </label>
                                     </div>
-                                    <h2 className="text-xl font-black text-foreground">{profileData.name || "System User"}</h2>
+                                    <h2 className="text-xl font-black text-foreground">{profileData.name || (role === 'teacher' ? "Faculty Member" : "System User")}</h2>
                                     <p className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-4">{profileData.department}</p>
 
                                     <div className="w-full pt-6 border-t border-border space-y-3">
                                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                                            <span>Status</span>
-                                            <span className="text-success italic">Synced</span>
+                                            <span>Auth Tier</span>
+                                            <span className="text-success italic">{role === 'teacher' ? 'Faculty Admin' : 'Standard Student'}</span>
                                         </div>
                                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                                            <span>Node</span>
-                                            <span className="text-foreground">Edge-Node-01</span>
+                                            <span>System Node</span>
+                                            <span className="text-foreground">{role === 'teacher' ? 'Master-Node-A' : 'Edge-Node-12'}</span>
                                         </div>
                                     </div>
                                     <button
@@ -114,79 +123,78 @@ export default function Profile() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                                <User className="h-3 w-3" /> Full Name
+                                                <User className="h-3 w-3" /> {role === 'teacher' ? 'Display Name' : 'Full Name'}
                                             </label>
                                             <input
                                                 type="text"
                                                 value={profileData.name}
                                                 onChange={e => setProfileData({ ...profileData, name: e.target.value })}
                                                 className="w-full rounded-2xl bg-background border border-border px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                                placeholder="e.g. Alex Johnson"
+                                                placeholder={role === 'teacher' ? "Dr. Jane Smith" : "Alex Johnson"}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                                <Mail className="h-3 w-3" /> Email Sync
+                                                <Mail className="h-3 w-3" /> Official Email
                                             </label>
                                             <input
                                                 type="email"
                                                 value={profileData.email}
                                                 onChange={e => setProfileData({ ...profileData, email: e.target.value })}
                                                 className="w-full rounded-2xl bg-background border border-border px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                                placeholder="alex@univ.edu"
+                                                placeholder="univ-faculty@edu.com"
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                                <Hash className="h-3 w-3" /> Roll Number
+                                                <Hash className="h-3 w-3" /> {role === 'teacher' ? 'Faculty ID' : 'Roll Number'}
                                             </label>
                                             <input
                                                 type="text"
                                                 value={profileData.roll}
                                                 onChange={e => setProfileData({ ...profileData, roll: e.target.value })}
                                                 className="w-full rounded-2xl bg-background border border-border px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                                placeholder="CSE-2023-001"
+                                                placeholder={role === 'teacher' ? "EMP-2026-X" : "CSE-2023-001"}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                                <Book className="h-3 w-3" /> Semester
+                                                <Book className="h-3 w-3" /> {role === 'teacher' ? 'Experience (Years)' : 'Semester'}
                                             </label>
                                             <input
                                                 type="number"
                                                 value={profileData.semester}
                                                 onChange={e => setProfileData({ ...profileData, semester: e.target.value })}
                                                 className="w-full rounded-2xl bg-background border border-border px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                                placeholder="5"
+                                                placeholder={role === 'teacher' ? "15" : "5"}
                                             />
                                         </div>
                                         <div className="md:col-span-2 space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                                <GraduationCap className="h-3 w-3" /> Department
+                                                <GraduationCap className="h-3 w-3" /> Department / Faculty
                                             </label>
                                             <select
                                                 value={profileData.department}
                                                 onChange={e => setProfileData({ ...profileData, department: e.target.value })}
                                                 className="w-full rounded-2xl bg-background border border-border px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all appearance-none"
                                             >
-                                                <option>B.Tech CSE</option>
-                                                <option>B.Tech ECE</option>
-                                                <option>B.Tech ME</option>
-                                                <option>M.Tech AI</option>
-                                                <option>BCA</option>
-                                                <option>MCA</option>
+                                                <option>CSE - Computer Science</option>
+                                                <option>ECE - Electronics</option>
+                                                <option>ME - Mechanical</option>
+                                                <option>AI - Artificial Intelligence</option>
+                                                <option>HSS - Humanities</option>
                                             </select>
                                         </div>
                                         <div className="md:col-span-2 space-y-2">
                                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                                Bio & Professional Objective
+                                                Professional Bio & Objective
                                             </label>
                                             <textarea
                                                 rows={4}
                                                 value={profileData.bio}
                                                 onChange={e => setProfileData({ ...profileData, bio: e.target.value })}
                                                 className="w-full rounded-2xl bg-background border border-border px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none"
-                                                placeholder="Aspiring software engineer with focus on AI/ML and distributed systems..."
+                                                placeholder={role === 'teacher' ? "Dedicated faculty with 10+ years in distributed systems research..." : "Aspiring software engineer..."}
                                             />
                                         </div>
                                     </div>
@@ -195,7 +203,7 @@ export default function Profile() {
                                         type="submit"
                                         className="w-full rounded-2xl gradient-primary py-4 text-sm font-black text-primary-foreground shadow-primary-glow flex items-center justify-center gap-3 hover:scale-[1.01] transition-all uppercase tracking-widest active:scale-95"
                                     >
-                                        <Save className="h-5 w-5" /> Sync Profile with IntellEdge
+                                        <Save className="h-5 w-5" /> Sync with IntellEdge Node
                                     </button>
                                 </form>
                             </div>

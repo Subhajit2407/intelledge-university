@@ -14,12 +14,17 @@ interface Project {
   category: string;
   useManualProgress: boolean;
   manualProgress: number;
+  platform?: string;
+  studentName?: string;
+  roll?: string;
 }
 
 export default function Projects() {
+  const role = localStorage.getItem("intelledge_role");
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem("student_projects");
+    const key = role === 'teacher' ? "faculty_assigned_tasks" : "student_projects";
+    const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : [];
   });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -29,8 +34,20 @@ export default function Projects() {
   const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("student_projects", JSON.stringify(projects));
-  }, [projects]);
+    const key = role === 'teacher' ? "faculty_assigned_tasks" : "student_projects";
+    if (projects.length === 0 && role === 'teacher') {
+      setProjects([
+        { id: 'm1', name: 'Neural Network Optimization', category: 'AI/ML', studentName: 'Alex Johnson', roll: 'CSE-001', startDate: '2026-01-10', endDate: '2026-03-01', platform: 'GitHub', useManualProgress: true, manualProgress: 85 },
+        { id: 'm2', name: 'Blockchain Voting System', category: 'Web3', studentName: 'Sarah Smith', roll: 'CSE-042', startDate: '2026-02-01', endDate: '2026-04-15', platform: 'Vercel', useManualProgress: true, manualProgress: 40 }
+      ]);
+    }
+  }, [role]);
+
+  useEffect(() => {
+    const key = role === 'teacher' ? "faculty_assigned_tasks" : "student_projects";
+    if (projects.length > 0) localStorage.setItem(key, JSON.stringify(projects));
+  }, [projects, role]);
+
 
   const calculateProgress = (proj: Project) => {
     if (proj.useManualProgress) return proj.manualProgress;
@@ -82,14 +99,20 @@ export default function Projects() {
         <main className="flex-1 overflow-y-auto px-8 py-6 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Project Intelligence</h2>
-              <p className="text-sm text-muted-foreground">Track and manage your project milestones and lifecycle</p>
+              <h2 className="text-2xl font-bold text-foreground">
+                {role === 'teacher' ? "Batch Assignment Vault" : "Project Intelligence"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {role === 'teacher'
+                  ? "Distribute assignments, track batch submissions & set academic milestones"
+                  : "Track and manage your project milestones and lifecycle"}
+              </p>
             </div>
             <button
               onClick={() => setShowAdd(!showAdd)}
               className="flex items-center gap-2 rounded-xl gradient-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-primary-glow hover:scale-105 transition-transform"
             >
-              <Plus className="h-4 w-4" /> New Project
+              <Plus className="h-4 w-4" /> {role === 'teacher' ? "Assign New Task" : "New Project"}
             </button>
           </div>
 

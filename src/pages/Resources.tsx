@@ -31,9 +31,19 @@ const typeIcons: Record<string, any> = {
 };
 
 export default function Resources() {
+  const role = localStorage.getItem("intelledge_role");
   const [search, setSearch] = useState("");
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [resources, setResources] = useState<Resource[]>(() => {
+    const saved = localStorage.getItem(role === 'teacher' ? "faculty_resources" : "student_resources");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [filter, setFilter] = useState<"all" | "behind">("all");
+
+  const saveResources = (newRes: Resource[]) => {
+    setResources(newRes);
+    localStorage.setItem(role === 'teacher' ? "faculty_resources" : "student_resources", JSON.stringify(newRes));
+  };
+
 
   const filtered = resources.filter((r) => {
     if (filter === "behind" && !r.behind_schedule) return false;
@@ -49,11 +59,37 @@ export default function Resources() {
         <main className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Resources & Knowledge</h2>
-              <p className="text-sm text-muted-foreground">AI-powered syllabus tracking, auto-summaries & progress detection</p>
+              <h2 className="text-2xl font-bold text-foreground">
+                {role === 'teacher' ? "Faculty Knowledge Hub" : "Resources & Knowledge"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {role === 'teacher'
+                  ? "Manage batch curriculum, distribute resources & track collective progress"
+                  : "AI-powered syllabus tracking, auto-summaries & progress detection"}
+              </p>
             </div>
-            <button className="flex items-center gap-2 rounded-xl gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-primary-glow hover:scale-[1.02] transition-transform">
-              <Upload className="h-4 w-4" /> Upload Resource
+            <button
+              onClick={() => {
+                const title = prompt("Resource Title:");
+                const subject = prompt("Subject Name:");
+                if (title && subject) {
+                  const newR: Resource = {
+                    id: Date.now().toString(),
+                    title,
+                    subject,
+                    type: "notes",
+                    topics_total: 10,
+                    topics_completed: 0,
+                    ai_summary: "Analyzing content in background...",
+                    uploaded_at: new Date().toISOString(),
+                    behind_schedule: false
+                  };
+                  saveResources([newR, ...resources]);
+                }
+              }}
+              className="flex items-center gap-2 rounded-xl gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-primary-glow hover:scale-[1.02] transition-transform"
+            >
+              <Upload className="h-4 w-4" /> {role === 'teacher' ? "Broadcast Resource" : "Upload Personal Note"}
             </button>
           </div>
 

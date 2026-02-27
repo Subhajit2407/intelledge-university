@@ -1,8 +1,12 @@
-// Core AI intelligence engine imports
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
-import { Send, Bot, User, Sparkles, Brain, Calendar, TrendingUp, FileText, Zap, Mic, MicOff, Volume2, Languages, X } from "lucide-react";
+import {
+  Send, Bot, User, Sparkles, Brain, Calendar, TrendingUp,
+  FileText, Zap, Mic, MicOff, Languages, X, Loader2,
+  ChevronRight, ArrowUpRight, BarChart3, Target, Info
+} from "lucide-react";
+import { getAIResponse } from "@/lib/gemini";
 
 interface Message {
   id: string;
@@ -12,42 +16,48 @@ interface Message {
 }
 
 const quickActions = [
-  { icon: TrendingUp, label: "Predict my final CGPA", prompt: "Predict my final CGPA based on my current performance trends." },
+  { icon: TrendingUp, label: "Predict my final CGPA", prompt: "Predict my final CGPA based on my actual performance trends." },
   { icon: Calendar, label: "Optimize my week", prompt: "Optimize my week for placement prep while maintaining academics." },
-  { icon: Brain, label: "Am I ready for Microsoft?", prompt: "Am I ready for the Microsoft SDE Intern role? Analyze my skills and suggest a preparation plan." },
-  { icon: FileText, label: "Create recovery plan", prompt: "Create a recovery plan for my low attendance in Computer Networks." },
-  { icon: Zap, label: "Generate study plan", prompt: "Generate an AI study plan for my upcoming ML mid-semester exam." },
-  { icon: Sparkles, label: "Draft email to faculty", prompt: "Draft a professional email to my Computer Networks professor requesting extra classes." },
+  { icon: Target, label: "Am I ready for Microsoft?", prompt: "Analyze my match score for a Microsoft SDE role based on my profile." },
+  { icon: FileText, label: "Attendance Recovery", prompt: "Analyze my current attendance risks and suggest a recovery plan." },
+  { icon: Brain, label: "Skill Gap Analysis", prompt: "Analyze my technical skill gaps based on my projects." },
+  { icon: Sparkles, label: "Faculty Email Draft", prompt: "Draft a professional email to my professor regarding extra classes." },
 ];
 
-// Mock AI responses
-const mockResponses: Record<string, string> = {
-  "predict": `## 📊 CGPA Prediction Analysis\n\nBased on your current performance data:\n\n**Current CGPA:** 7.8 (Semester 4)\n**Semester 5 Projected GPA:** 8.1\n\n### Prediction Model:\n| Scenario | Final CGPA |\n|----------|-----------|\n| 🟢 Best Case | **8.3** |\n| 🟡 Most Likely | **8.0** |\n| 🔴 Worst Case | **7.6** |\n\n### Key Factors:\n- **Positive:** Strong upward trend in DSA and DBMS\n- **Risk:** Operating Systems and Computer Networks need improvement\n- **Action:** Focus 60% effort on weak subjects for next 4 weeks\n\n> 💡 *If you score above 75% in CN and OS finals, your CGPA will cross 8.0*`,
-  "optimize": `## 📅 Optimized Weekly Schedule\n\nHere's your AI-balanced week for placement prep + academics:\n\n### Monday–Friday:\n| Time | Activity |\n|------|----------|\n| 6:00–7:30 AM | DSA Practice (LeetCode Medium) |\n| 8:00–4:00 PM | Classes & Labs |\n| 4:30–5:30 PM | OS Revision (Recovery) |\n| 6:00–7:30 PM | System Design Study |\n| 8:00–9:00 PM | CN Attendance Recovery |\n\n### Weekend:\n| Time | Activity |\n|------|----------|\n| 9:00–12:00 PM | Mock Interview Practice |\n| 2:00–5:00 PM | Project Work |\n| 6:00–8:00 PM | Resume & Portfolio Update |\n\n### ⚡ Automation Activated:\n- Calendar synced with assignments\n- Reminders set for CN classes\n- DSA streak tracker enabled`,
-  "microsoft": `## 🏢 Microsoft Readiness Analysis\n\n### Your Match Score: **82%**\n\n| Criteria | Status | Score |\n|----------|--------|-------|\n| CGPA (≥7.5) | ✅ Met (7.8) | 100% |\n| DSA Skills | ✅ Strong | 85% |\n| System Design | ⚠️ Developing | 45% |\n| Communication | ✅ Good | 70% |\n| Projects | ✅ Relevant | 80% |\n\n### 🎯 30-Day Prep Plan:\n1. **Week 1–2:** System Design fundamentals (15 hrs)\n2. **Week 2–3:** LeetCode Medium/Hard (20 problems)\n3. **Week 3–4:** Mock interviews (3 sessions)\n4. **Week 4:** Behavioral prep + resume polish\n\n### ⚠️ Gap Alert:\n- System Design is your weakest area\n- Recommended: Complete "Grokking System Design" course\n- Estimated time: 20 hours`,
-  "default": `I've successfully synchronized with your academic profile. Everything looks stable.\n\n### 📋 Quick Insights:\n- **Systems:** Online\n- **Data Integrity:** Verified\n- **Target Goals:** Ready for input\n\nHow can I assist you with your studies or placements today?`,
-};
-
 export default function AICopilot() {
-  const studentData = JSON.parse(localStorage.getItem("student_profile_data") || '{"name": "Student"}');
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: `# 🤖 Hello, ${studentData.name}\n\nI am your **Neural Academic Intelligence**. My core systems are online and synced with your institutional profile. \n\nI am ready to assist you with:\n\n- **Live CGPA Projections**\n- **Weekly Schedule Optimization**\n- **Skill Gap & Career Readiness Analysis**\n- **Attendance Recovery Strategies**\n\nHow can I help you excel today?`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceLang, setVoiceLang] = useState<"en" | "kn" | "hi">("en");
-  const [voiceStatus, setVoiceStatus] = useState("Tap mic to speak");
+  const [voiceStatus, setVoiceStatus] = useState("Awaiting neural input...");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Load Real Context
+  const context = useMemo(() => {
+    const student = JSON.parse(localStorage.getItem("student_profile_data") || "{}");
+    const records = JSON.parse(localStorage.getItem("teacher_student_records") || "[]");
+    const myRecord = records.find((r: any) => r.roll === student.roll || r.name === student.name);
+    const projects = JSON.parse(localStorage.getItem("student_projects") || "[]");
+    return { student, record: myRecord, projects };
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      const name = context.student.name?.split(" ")[0] || "Student";
+      setMessages([
+        {
+          id: "welcome",
+          role: "assistant",
+          content: `# 👋 Hello, ${name}\n\nI am your **Neural Academic Copilot**. My session is currently synchronized with your institutional profile and project vault.\n\n### Accessing Core Intelligence:\n- **Predictive Analytics:** CGPA modeling and grade forecasting.\n- **Career Readiness:** Real-time matching for companies like Microsoft or Google.\n- **Sync Audits:** Precise attendance risk assessments.\n- **Multi-Language:** I speak English, ಕನ್ನಡ, and हिंदी.\n\nType a command or use **Voice Interaction** below.`,
+          timestamp: new Date(),
+        }
+      ]);
+    }
+  }, [context]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,19 +72,39 @@ export default function AICopilot() {
         const text = e.results[0][0].transcript;
         sendMessage(text);
         setIsListening(false);
-        setVoiceStatus("Processing...");
+        setVoiceStatus("Processing neural query...");
       };
       recognitionRef.current.onend = () => setIsListening(false);
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+        setVoiceStatus("Could not hear clearly. Try again.");
+      };
     }
   }, []);
 
   const speak = (text: string) => {
-    // Clean markdown for speech
-    const cleanText = text.replace(/[#*`|]/g, "").replace(/\[.*\]\(.*\)/g, "");
+    const cleanText = text.replace(/[#*`|]/g, "").replace(/\[.*\]\(.*\)/g, "").replace(/✅|📌|📊|🔮|⚠️|👋|🧠|🏢/g, "");
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Smart voice selection
+    const voices = window.speechSynthesis.getVoices();
+    let selectedVoice = null;
+
+    if (voiceLang === "en") {
+      selectedVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Premium")) ||
+        voices.find(v => v.lang.startsWith("en-") && v.name.includes("Female")) ||
+        voices.find(v => v.lang.startsWith("en-"));
+    } else if (voiceLang === "kn") {
+      selectedVoice = voices.find(v => v.lang.startsWith("kn")) || voices.find(v => v.lang.startsWith("hi"));
+    } else if (voiceLang === "hi") {
+      selectedVoice = voices.find(v => v.lang.startsWith("hi"));
+    }
+
+    if (selectedVoice) utterance.voice = selectedVoice;
     utterance.lang = voiceLang === "en" ? "en-US" : voiceLang === "kn" ? "kn-IN" : "hi-IN";
-    utterance.rate = 0.95;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.05;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -82,7 +112,7 @@ export default function AICopilot() {
     window.speechSynthesis.cancel();
   };
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text, timestamp: new Date() };
@@ -90,49 +120,39 @@ export default function AICopilot() {
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let content = mockResponses.default;
-
-      // Multi-language context handling
-      if (voiceLang === "kn") {
-        if (lower.includes("cgpa") || lower.includes("ಫಲಿತಾಂಶ")) content = "ನಿಮ್ಮ ಪ್ರಸ್ತುತ CGPA 7.8 ಆಗಿದೆ. ಮುಂದಿನ ಸೆಮಿಸ್ಟರ್‌ನಲ್ಲಿ ನೀವು 8.1 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಗಳಿಸುವ ಸಾಧ್ಯತೆಯಿದೆ.";
-        else if (lower.includes("ಹಲೋ") || lower.includes("ನಮಸ್ಕಾರ")) content = "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಎಐ ಸಹಾಯಕಿ. ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?";
-        else content = "ಕ್ಷಮಿಸಿ, ಈ ವಿಷಯದ ಬಗ್ಗೆ ನನಗೆ ಮಾಹಿತಿ ಇಲ್ಲ. ನೀವು ಹಾಜರಾತಿ ಅಥವಾ ಪ್ಲೇಸ್ಮೆಂಟ್ ಬಗ್ಗೆ ಕೇಳಬಹುದು.";
-      } else if (voiceLang === "hi") {
-        if (lower.includes("cgpa") || lower.includes("परिणाम")) content = "आपका वर्तमान CGPA 7.8 है। अगले सेमेस्टर में आपके 8.1 से ऊपर जाने की संभावना है।";
-        else if (lower.includes("नमस्ते") || lower.includes("हेलो")) content = "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ?";
-        else content = "क्षमा करें, मुझे इस बारे में जानकारी नहीं है। कृपया उपस्थिति या प्लेसमेंट के बारे में पूछें।";
-      } else {
-        if (lower.includes("cgpa") || lower.includes("predict")) content = mockResponses.predict;
-        else if (lower.includes("optimize") || lower.includes("week")) content = mockResponses.optimize;
-        else if (lower.includes("microsoft") || lower.includes("ready")) content = mockResponses.microsoft;
-      }
+    try {
+      const aiResponse = await getAIResponse(text, context, voiceLang);
 
       const response: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content,
+        content: aiResponse.message,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, response]);
-      setIsTyping(false);
+
       if (isVoiceMode) {
-        speak(content);
-        setVoiceStatus("Response ready. Tap to speak again.");
+        speak(aiResponse.message);
+        setVoiceStatus("Response synchronized. Tap to speak again.");
       }
-    }, 1200);
+    } catch (error) {
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I encountered a processing error. Please try your query again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const toggleVoiceMode = () => {
     setIsVoiceMode(!isVoiceMode);
     if (!isVoiceMode) {
-      setVoiceStatus("Tap mic to speak");
+      setVoiceStatus("Awaiting neural input...");
     }
-  };
-
-  const nextLang = () => {
-    setVoiceLang(prev => prev === "en" ? "kn" : prev === "kn" ? "hi" : "en");
   };
 
   const startListening = () => {
@@ -140,133 +160,164 @@ export default function AICopilot() {
       recognitionRef.current.lang = voiceLang === "en" ? "en-US" : voiceLang === "kn" ? "kn-IN" : "hi-IN";
       recognitionRef.current.start();
       setIsListening(true);
-      setVoiceStatus("Listening...");
+      const langLabel = voiceLang === "en" ? "English" : voiceLang === "kn" ? "ಕನ್ನಡ" : "हिंदी";
+      setVoiceStatus(`Listening in ${langLabel}...`);
     }
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background font-sans">
+    <div className="flex h-screen overflow-hidden ios-bg font-sans">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 flex flex-col overflow-hidden relative">
 
-          {/* Header */}
-          <div className="px-8 py-4 border-b border-border bg-card/30 backdrop-blur-sm z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-primary-glow">
-                <Bot className="h-5 w-5 text-primary-foreground" />
+          {/* Premium AI Header */}
+          <div className="px-10 py-6 border-b border-slate-100 bg-white/40 backdrop-blur-xl z-20 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-500/20 blur-lg rounded-full animate-pulse" />
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-[#1C1C1E] text-white shadow-lg">
+                  <Bot className="h-6 w-6" />
+                </div>
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground">AI Copilot Core</h2>
-                <p className="text-xs text-muted-foreground">Neural Intelligence Engine V4.2</p>
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight">AI Copilot</h2>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                    Neural Engine Active · {voiceLang === "en" ? "English" : voiceLang === "kn" ? "ಕನ್ನಡ" : "हिंदी"}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setVoiceLang(prev => prev === "en" ? "kn" : prev === "kn" ? "hi" : "en")}
+                className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
+              >
+                <Languages className="h-4 w-4 text-blue-500" />
+                {voiceLang === "en" ? "ENG" : voiceLang === "kn" ? "KAN" : "HIN"}
+              </button>
               <button
                 onClick={stopSpeaking}
-                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all"
+                className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all active:scale-95"
               >
                 <X className="h-4 w-4" /> Stop
               </button>
               <button
                 onClick={toggleVoiceMode}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${isVoiceMode ? "bg-primary text-primary-foreground shadow-primary-glow" : "bg-secondary text-foreground hover:bg-accent"}`}
+                className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all active:scale-95 ${isVoiceMode
+                  ? "bg-[#007AFF] text-white shadow-[#007AFF]/25 shadow-lg"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
               >
-                <Mic className="h-4 w-4" /> {isVoiceMode ? "Exit Voice Mode" : "Voice Interaction"}
+                <Mic className="h-4 w-4" /> {isVoiceMode ? "Terminal Mode" : "Voice Sync"}
               </button>
             </div>
           </div>
 
           {isVoiceMode ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-card/50 to-background animate-fade-in relative overflow-hidden">
-              {/* Visualizer Background */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-3xl -z-10">
-                <div className={`h-96 w-96 rounded-full transition-all duration-1000 ${isListening ? "bg-primary scale-150" : "bg-primary/20 scale-100"}`} />
+            <div className="flex-1 flex flex-col items-center justify-center p-12 bg-gradient-to-b from-blue-50/50 to-white animate-in fade-in duration-500">
+              {/* Visualizer Aura */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+                <div className={`h-[500px] w-[500px] rounded-full border border-blue-100/30 transition-all duration-1000 ${isListening ? "scale-125 bg-blue-500/5 rotate-180" : "scale-100 bg-transparent rotate-0"}`} />
+                <div className={`absolute h-[600px] w-[600px] rounded-full border border-blue-50/50 transition-all duration-[2000ms] ${isListening ? "scale-150 rotate-[-180deg]" : "scale-110"}`} />
               </div>
 
-              <div className="mb-8 flex flex-col items-center text-center max-w-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <button
-                    onClick={nextLang}
-                    className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-1.5 text-[10px] font-bold text-foreground"
-                  >
-                    <Languages className="h-3 w-3" /> {voiceLang === "en" ? "English" : voiceLang === "kn" ? "Kannada" : "Hindi"}
-                  </button>
+              <div className="relative z-10 flex flex-col items-center text-center max-w-xl">
+                <button
+                  onClick={() => setVoiceLang(prev => prev === "en" ? "kn" : prev === "kn" ? "hi" : "en")}
+                  className="mb-10 flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm hover:border-blue-200 transition-all"
+                >
+                  <Languages className="h-4 w-4 text-blue-500" />
+                  {voiceLang === "en" ? "English" : voiceLang === "kn" ? "ಕನ್ನಡ (Kannada)" : "हिंदी (Hindi)"}
+                </button>
+
+                <div className={`relative mb-16 flex h-40 w-40 items-center justify-center rounded-[3rem] shadow-2xl transition-all duration-500 ${isListening ? "bg-[#007AFF] scale-110 shadow-blue-500/40" : "bg-[#1C1C1E]"}`}>
+                  <div className={`absolute inset-0 rounded-[3rem] border-8 border-blue-500/20 ${isListening ? "animate-ping" : ""}`} />
+                  <Sparkles className={`h-16 w-16 ${isListening ? "text-white" : "text-blue-500"} transition-all`} />
                 </div>
-                <div className={`relative mb-12 flex h-32 w-32 items-center justify-center rounded-full shadow-2xl transition-all duration-500 ${isListening ? "bg-primary scale-110 shadow-primary-glow" : "bg-secondary"}`}>
-                  <div className={`absolute inset-0 rounded-full border-4 border-primary/20 ${isListening ? "animate-ping" : ""}`} />
-                  <Bot className={`h-16 w-16 ${isListening ? "text-primary-foreground" : "text-primary opacity-50"} transition-all`} />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">{voiceStatus}</h3>
-                <p className="text-sm text-muted-foreground italic mb-12">
+
+                <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tighter">{voiceStatus}</h3>
+                <p className="text-sm font-medium text-slate-400 mb-16 leading-relaxed max-w-xs">
                   {voiceLang === "en"
-                    ? "I can help with ERP data, Academics, and Career Guidance in English."
-                    : "ನಾನು ಸಿಸ್ಟಮ್ ಮತ್ತು ನಿಮ್ಮ ಪ್ರಗತಿಯ ಬಗ್ಗೆ ಕನ್ನಡದಲ್ಲಿ ಮಾಹಿತಿ ನೀಡಬಲ್ಲೆ."}
+                    ? "I am listening to your career and academic queries. Speak clearly for best results."
+                    : voiceLang === "kn"
+                      ? "ನಿಮ್ಮ ಶೈಕ್ಷಣಿಕ ಅಥವಾ ಉದ್ಯೋಗದ ಬಗ್ಗೆ ಮಾಹಿತಿಗಾಗಿ ಮಾತನಾಡಿ. ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳಿ."
+                      : "अपनी शैक्षणिक या करियर से जुड़ी जानकारी के लिए बोलें। स्पष्ट रूप से बोलें।"}
                 </p>
 
                 <button
                   onClick={startListening}
                   disabled={isListening}
-                  className={`flex h-20 w-20 items-center justify-center rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 ${isListening ? "bg-destructive text-destructive-foreground animate-pulse" : "gradient-primary text-primary-foreground shadow-primary-glow"}`}
+                  className={`flex h-24 w-24 items-center justify-center rounded-full shadow-2xl transition-all hover:scale-110 active:scale-90 ${isListening
+                    ? "bg-rose-500 text-white animate-pulse"
+                    : "bg-[#007AFF] text-white shadow-blue-500/40"
+                    }`}
                 >
-                  {isListening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+                  {isListening ? <MicOff className="h-10 w-10" /> : <Mic className="h-10 w-10" />}
                 </button>
               </div>
 
-              <div className="flex items-center gap-6 mt-12">
-                <div className="text-center group">
-                  <TrendingUp className="h-5 w-5 mx-auto mb-2 text-primary opacity-50 group-hover:opacity-100" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Academic Analysis</span>
-                </div>
-                <div className="text-center group">
-                  <Zap className="h-5 w-5 mx-auto mb-2 text-primary opacity-50 group-hover:opacity-100" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">System Voice Commands</span>
-                </div>
+              {/* Action Indicators */}
+              <div className="absolute bottom-20 flex gap-12">
+                {[
+                  { icon: BarChart3, label: voiceLang === "en" ? "Analytics" : voiceLang === "kn" ? "ವಿಶ್ಲೇಷಣೆ" : "विश्लेषण" },
+                  { icon: Target, label: voiceLang === "en" ? "Placement" : voiceLang === "kn" ? "ಪ್ಲೇಸ್ಮೆಂಟ್" : "प्लेसमेंट" },
+                  { icon: Brain, label: voiceLang === "en" ? "Knowledge" : voiceLang === "kn" ? "ಜ್ಞಾನ" : "ज्ञान" }
+                ].map((item, i) => (
+                  <div key={i} className="flex flex-col items-center gap-3 opacity-20">
+                    <item.icon className="h-6 w-6 text-slate-900" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{item.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
             <>
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                <div className="max-w-3xl mx-auto space-y-6">
+              {/* Chat Canvas */}
+              <div className="flex-1 overflow-y-auto px-10 py-10 custom-scrollbar">
+                <div className="max-w-4xl mx-auto space-y-10">
                   {messages.map((msg) => (
-                    <div key={msg.id} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}>
-                      {msg.role === "assistant" && (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
-                          <Bot className="h-4 w-4 text-primary-foreground" />
-                        </div>
-                      )}
-                      <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === "user"
-                        ? "gradient-primary text-primary-foreground shadow-primary-glow"
-                        : "bg-card shadow-card"
+                    <div key={msg.id} className={`flex gap-6 animate-in fade-in slide-in-from-bottom-5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ${msg.role === "assistant"
+                        ? "bg-[#1C1C1E] text-white"
+                        : "bg-blue-50 text-[#007AFF]"
                         }`}>
-                        <div className={`text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "assistant" ? "text-foreground" : ""}`}>
-                          {msg.content}
+                        {msg.role === "assistant" ? <Bot className="h-6 w-6" /> : <User className="h-6 w-6" />}
+                      </div>
+
+                      <div className={`max-w-[80%] space-y-2 ${msg.role === "user" ? "text-right" : ""}`}>
+                        <div className={`rounded-[2rem] p-8 shadow-sm border ${msg.role === "user"
+                          ? "bg-[#007AFF] text-white border-[#007AFF]/20"
+                          : "bg-white text-slate-700 border-slate-100"
+                          }`}>
+                          <div className={`text-[15px] leading-[1.6] prose prose-slate max-w-none ${msg.role === "user" ? "prose-invert" : ""}`}>
+                            {msg.content.split('\n').map((line, i) => (
+                              <p key={i} className={line.startsWith('#') ? "text-xl font-bold mb-4" : "mb-2"}>
+                                {line.replace(/^[# ]+/, '')}
+                              </p>
+                            ))}
+                          </div>
                         </div>
-                        <p className={`text-[9px] mt-2 ${msg.role === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">
                           {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
-                      {msg.role === "user" && (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                          <User className="h-4 w-4 text-foreground" />
-                        </div>
-                      )}
                     </div>
                   ))}
 
                   {isTyping && (
-                    <div className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
-                        <Bot className="h-4 w-4 text-primary-foreground" />
+                    <div className="flex gap-6 animate-pulse">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1C1C1E] text-white">
+                        <Bot className="h-6 w-6" />
                       </div>
-                      <div className="rounded-2xl bg-card shadow-card p-4">
-                        <div className="flex gap-1">
-                          <span className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
-                        </div>
+                      <div className="rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: "300ms" }} />
                       </div>
                     </div>
                   )}
@@ -274,46 +325,52 @@ export default function AICopilot() {
                 </div>
               </div>
 
-              {/* Quick actions */}
-              {messages.length <= 1 && (
-                <div className="px-8 pb-2">
-                  <div className="max-w-3xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {quickActions.map((action) => (
-                        <button
-                          key={action.label}
-                          onClick={() => sendMessage(action.prompt)}
-                          className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-left text-xs font-medium text-foreground hover:bg-accent hover:border-primary/30 transition-all"
-                        >
-                          <action.icon className="h-4 w-4 text-primary shrink-0" />
-                          {action.label}
-                        </button>
-                      ))}
+              {/* Action Toolbar */}
+              <div className="px-10 pb-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center gap-3 mb-4 overflow-x-auto pb-2 custom-scrollbar">
+                    <div className="flex-shrink-0 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pr-4 border-r border-slate-100">
+                      <Zap className="h-3 w-3 text-amber-500" /> Suggestions
                     </div>
+                    {quickActions.map((action) => (
+                      <button
+                        key={action.label}
+                        onClick={() => sendMessage(action.prompt)}
+                        className="flex-shrink-0 flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-blue-300 transition-all hover:translate-y-[-2px] shadow-sm"
+                      >
+                        <action.icon className="h-3.5 w-3.5 text-[#007AFF]" />
+                        {action.label}
+                      </button>
+                    ))}
                   </div>
-                </div>
-              )}
 
-              {/* Input */}
-              <div className="px-8 py-4 border-t border-border bg-card/20 backdrop-blur-md">
-                <div className="max-w-3xl mx-auto">
-                  <form onSubmit={(e) => { e.preventDefault(); sendMessage(input); }} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      placeholder="Ask your academic assistant..."
-                      className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 placeholder:text-muted-foreground"
-                      disabled={isTyping}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!input.trim() || isTyping}
-                      className="rounded-xl gradient-primary p-3 text-primary-foreground shadow-primary-glow disabled:opacity-50 hover:scale-105 transition-transform"
+                  {/* Main Input */}
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-blue-500/5 blur-xl group-focus-within:bg-blue-500/10 transition-all rounded-3xl" />
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
+                      className="relative flex items-center gap-4 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-[2rem] p-3 shadow-xl transition-all focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-400"
                     >
-                      <Send className="h-4 w-4" />
-                    </button>
-                  </form>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-slate-50 text-slate-400">
+                        <Brain className="h-6 w-6" />
+                      </div>
+                      <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder={voiceLang === "en" ? "Command your career analytics..." : voiceLang === "kn" ? "ನಿಮ್ಮ ಶೈಕ್ಷಣಿಕ ಪ್ರಶ್ನೆ ಬರೆಯಿರಿ..." : "अपना शैक्षणिक प्रश्न लिखें..."}
+                        className="flex-1 bg-transparent px-2 py-3 text-base font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                        disabled={isTyping}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!input.trim() || isTyping}
+                        className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-[#007AFF] text-white shadow-lg shadow-blue-500/30 disabled:opacity-50 hover:scale-105 active:scale-95 transition-all"
+                      >
+                        {isTyping ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUpRight className="h-6 w-6" />}
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
             </>
