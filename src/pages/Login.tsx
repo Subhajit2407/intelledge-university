@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { GraduationCap, LogIn, User, Bot, Loader2, UserPlus, ArrowLeft, ShieldCheck, Cpu } from "lucide-react";
+import { GraduationCap, LogIn, User, Bot, Loader2, UserPlus, ArrowLeft, ShieldCheck, Cpu, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isSignup, setIsSignup] = useState(searchParams.get("mode") === "signup");
-  const [role, setRoleState] = useState<"student" | "teacher">("student");
+  const [role, setRoleState] = useState<"student" | "teacher" | "recruiter">("student");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -24,8 +24,9 @@ export default function Login() {
         setIsLoading(false);
       } else {
         localStorage.setItem("intelledge_role", role);
+        const roleLabel = role === 'student' ? 'Student' : role === 'teacher' ? 'Faculty Member' : 'Recruitment Partner';
         toast.success("Sync Successful", {
-          description: `Welcome back, ${role === 'student' ? 'Student' : 'Faculty Member'}. Your neural session has been restored.`,
+          description: `Welcome back, ${roleLabel}. Your neural session has been restored.`,
         });
         setIsLoading(false);
         // Navigate to dashboard after login
@@ -67,16 +68,23 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setRoleState("student")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${role === "student" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold transition-all ${role === "student" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
               >
                 <User className="h-4 w-4" /> STUDENT
               </button>
               <button
                 type="button"
                 onClick={() => setRoleState("teacher")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${role === "teacher" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold transition-all ${role === "teacher" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
               >
                 <Cpu className="h-4 w-4" /> FACULTY
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleState("recruiter")}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold transition-all ${role === "recruiter" ? "bg-white text-[#0D2B1D] shadow-sm border border-slate-200/50" : "text-slate-400 hover:text-slate-600"}`}
+              >
+                <Building2 className="h-4 w-4" /> RECRUITER
               </button>
             </div>
 

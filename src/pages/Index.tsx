@@ -7,7 +7,7 @@ import { CourseCards } from "@/components/dashboard/CourseCards";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
-import { User, GraduationCap, Upload, Save, UserCheck, Database, Plus, Trash2, Edit2, Bell, BookOpen, AlertCircle, Send, CheckCircle2, Sparkles } from "lucide-react";
+import { User, GraduationCap, Upload, Save, UserCheck, Database, Plus, Trash2, Edit2, Bell, BookOpen, AlertCircle, Send, CheckCircle2, Sparkles, Briefcase, TrendingUp } from "lucide-react";
 import IntellEdgeDB, { TeacherRecord } from "@/lib/db";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -303,6 +303,104 @@ export default function Index() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (role === "recruiter") {
+    const totalStudents = teacherRecords.length;
+    const avgScore = totalStudents > 0 ? (teacherRecords.reduce((acc, r) => acc + parseFloat(r.score), 0) / totalStudents).toFixed(2) : "0.00";
+    const topPerformers = teacherRecords.filter(r => parseFloat(r.score) > 8.5).length;
+
+    return (
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <TopBar />
+          <main className="flex-1 overflow-y-auto px-10 py-10 space-y-10 custom-scrollbar">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-4 rounded-[2rem] bg-[#0D2B1D] text-white shadow-2xl">
+                  <Briefcase className="h-7 w-7" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black text-foreground tracking-tight">Recruitment Commander</h2>
+                  <p className="text-sm text-muted-foreground font-medium italic">Discover top talent and manage institutional opportunities</p>
+                </div>
+              </div>
+              <button
+                onClick={() => window.location.href = "/placements"}
+                className="bg-[#0D2B1D] text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+              >
+                <Plus className="h-5 w-5" /> Post New Job
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="ios-card p-8 bg-emerald-50/50 border-emerald-100/50">
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Available Talent</p>
+                <p className="text-4xl font-black text-slate-900">{totalStudents}</p>
+                <p className="text-xs font-semibold text-emerald-600/60 mt-2">Active Batch 2026 Students</p>
+              </div>
+              <div className="ios-card p-8 bg-blue-50/50 border-blue-100/50">
+                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Top Performers</p>
+                <p className="text-4xl font-black text-slate-900">{topPerformers}</p>
+                <p className="text-xs font-semibold text-blue-600/60 mt-2">Students with CGPA &gt; 8.5</p>
+              </div>
+              <div className="ios-card p-8 bg-purple-50/50 border-purple-100/50">
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-2">Average Merit</p>
+                <p className="text-4xl font-black text-slate-900">{avgScore}</p>
+                <p className="text-xs font-semibold text-purple-600/60 mt-2">Mean Batch Performance Score</p>
+              </div>
+            </div>
+
+            <div className="ios-card overflow-hidden">
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Talent Insight Feed</h3>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Sync Alpha</span>
+              </div>
+              <div className="p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                      <h4 className="font-bold text-slate-900">Skill Trends 2026</h4>
+                    </div>
+                    <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                      78% of the current batch has completed advanced certifications in AI/ML and Cloud Architecture.
+                      Demand for Full-stack roles remains high.
+                    </p>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-xs font-bold">
+                        <span className="text-slate-500 uppercase tracking-wider">React/Next.js</span>
+                        <span className="text-slate-900">88%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '88%' }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+                        <Sparkles className="h-5 w-5" />
+                      </div>
+                      <h4 className="font-bold text-slate-900">AI Talent Matching</h4>
+                    </div>
+                    <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                      Our intelligence engine has identified 12 students matching your typical hiring profile for software roles.
+                    </p>
+                    <button className="text-xs font-black text-purple-600 uppercase tracking-widest hover:underline">
+                      View Matching Candidates →
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

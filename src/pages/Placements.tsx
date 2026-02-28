@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import {
   Search, TrendingUp, Bot, Sparkles, Loader2, Globe, Building2, Calendar,
-  ExternalLink, Clock, CheckCircle2, BookOpen, ChevronDown, ChevronUp, ChevronRight, Zap, Trophy, Target, Users
+  ExternalLink, Clock, CheckCircle2, BookOpen, ChevronDown, ChevronUp, ChevronRight, Zap, Trophy, Target, Users, UserPlus
 } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 
@@ -51,6 +51,8 @@ const COMPANY_DATABASE = [
   { id: "c39", company: "Bank of America", category: "Banking / Tech", roles: "Tech roles in banking, analytics", timeline: "Dec–Mar (tech hiring)", logo: "B", color: "#0067B1" },
 ];
 
+import { toast } from "sonner";
+
 const CATEGORY_COLORS: Record<string, string> = {
   "IT & Services": "#007AFF",
   "IT / Services": "#007AFF",
@@ -83,11 +85,27 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function Placements() {
+  const role = localStorage.getItem("intelledge_role");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [discoveryResults, setDiscoveryResults] = useState<any[]>([]);
   const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [isPostingJob, setIsPostingJob] = useState(false);
+
+  const [companies, setCompanies] = useState(() => {
+    const saved = localStorage.getItem("intelledge_posted_jobs");
+    const localJobs = saved ? JSON.parse(saved) : [];
+    return [...COMPANY_DATABASE, ...localJobs];
+  });
+
+  const [newJob, setNewJob] = useState({
+    company: "",
+    category: "IT & Services",
+    roles: "",
+    timeline: "",
+  });
+
   const [readiness] = useState({ resume: parseInt(localStorage.getItem("ats_score") || "0"), skills: 0, interview: 0, domain: 0, placement: 0 });
 
   const radarData = [
@@ -99,38 +117,58 @@ export default function Placements() {
   ];
 
   const categories = useMemo(() => {
-    const cats = Array.from(new Set(COMPANY_DATABASE.map(c => c.category)));
+    const cats = Array.from(new Set(companies.map(c => c.category)));
     return cats.sort();
-  }, []);
+  }, [companies]);
 
   const filtered = useMemo(() => {
-    return COMPANY_DATABASE.filter(c => {
+    return companies.filter(c => {
       if (categoryFilter !== "all" && c.category !== categoryFilter) return false;
       if (search && !c.company.toLowerCase().includes(search.toLowerCase()) && !c.roles.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [categoryFilter, search]);
+  }, [categoryFilter, search, companies]);
 
   const displayedCompanies = showAllCompanies ? filtered : filtered.slice(0, 15);
 
   const runDiscovery = () => {
     setIsDiscovering(true);
     setTimeout(() => {
-      const live = COMPANY_DATABASE.filter(c => c.category.includes("Product") || c.category.includes("Tech"));
+      const live = companies.filter(c => c.category.includes("Product") || c.category.includes("Tech"));
       const shuffled = [...live].sort(() => 0.5 - Math.random());
       setDiscoveryResults(shuffled.slice(0, 5));
       setIsDiscovering(false);
     }, 1500);
   };
 
+  const handlePostJob = (e: React.FormEvent) => {
+    e.preventDefault();
+    const jobToAdd = {
+      ...newJob,
+      id: "posted-" + Date.now(),
+      logo: newJob.company.charAt(0).toUpperCase(),
+      color: "#" + Math.floor(Math.random() * 16777215).toString(16)
+    };
+
+    const saved = localStorage.getItem("intelledge_posted_jobs");
+    const localJobs = saved ? JSON.parse(saved) : [];
+    const updatedLocalJobs = [jobToAdd, ...localJobs];
+    localStorage.setItem("intelledge_posted_jobs", JSON.stringify(updatedLocalJobs));
+
+    setCompanies([jobToAdd, ...companies]);
+    setIsPostingJob(false);
+    setNewJob({ company: "", category: "IT & Services", roles: "", timeline: "" });
+    toast.success("Job Posted Successfully!", {
+      description: `${jobToAdd.company} is now visible to all students in the Placement Hub.`,
+    });
+  };
+
   const statsList = [
-    { icon: Building2, value: `${COMPANY_DATABASE.length}+`, label: "Partner Companies", color: "#007AFF" },
+    { icon: Building2, value: `${companies.length}+`, label: "Partner Companies", color: "#007AFF" },
     { icon: Trophy, value: "98.3%", label: "Placement Rate", color: "#34C759" },
     { icon: Globe, value: "15+", label: "Countries Hiring", color: "#FF9F0A" },
     { icon: Zap, value: "Live", label: "Real-time Sync", color: "#BF5AF2" },
   ];
-
-  const role = localStorage.getItem("intelledge_role");
 
   return (
     <div className="flex h-screen overflow-hidden ios-bg">
@@ -146,16 +184,89 @@ export default function Placements() {
               <p className="text-sm font-medium text-slate-500 mt-1">
                 {role === 'teacher'
                   ? "Faculty Dashboard: Batch placement metrics and institutional hiring trends"
-                  : "AI-driven career matching & active recruitment portal"}
+                  : role === 'recruiter'
+                    ? "Recruiter Portal: Connect with top talent and manage institutional job postings"
+                    : "AI-driven career matching & active recruitment portal"}
               </p>
             </div>
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow-sm border border-slate-100">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                {role === 'teacher' ? 'Master Sync Active' : 'Live Recruiting Active'}
-              </span>
+            <div className="flex items-center gap-4">
+              {role === 'recruiter' && (
+                <button
+                  onClick={() => setIsPostingJob(true)}
+                  className="px-6 py-3 rounded-2xl bg-[#0D2B1D] text-white text-sm font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                >
+                  <UserPlus className="h-4 w-4" /> Post New Opportunity
+                </button>
+              )}
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow-sm border border-slate-100">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {role === 'teacher' ? 'Master Sync Active' : role === 'recruiter' ? 'Recruiter Session Active' : 'Live Recruiting Active'}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* ── Job Posting Form ── */}
+          {isPostingJob && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 px-6">
+              <div className="bg-white rounded-[3rem] p-10 w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-black text-slate-900">Post New Opportunity</h3>
+                  <button onClick={() => setIsPostingJob(false)} className="h-10 w-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors">
+                    <ChevronDown className="h-6 w-6 text-slate-400 rotate-180" />
+                  </button>
+                </div>
+                <form onSubmit={handlePostJob} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Company Name</label>
+                    <input
+                      required
+                      value={newJob.company}
+                      onChange={e => setNewJob({ ...newJob, company: e.target.value })}
+                      placeholder="e.g. Google India"
+                      className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-4 focus:ring-[#0D2B1D]/5 transition-all font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Sector</label>
+                      <select
+                        value={newJob.category}
+                        onChange={e => setNewJob({ ...newJob, category: e.target.value })}
+                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-4 focus:ring-[#0D2B1D]/5 transition-all font-bold text-slate-900 appearance-none"
+                      >
+                        {Object.keys(CATEGORY_COLORS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Hiring Timeline</label>
+                      <input
+                        required
+                        value={newJob.timeline}
+                        onChange={e => setNewJob({ ...newJob, timeline: e.target.value })}
+                        placeholder="e.g. Aug–Dec"
+                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-4 focus:ring-[#0D2B1D]/5 transition-all font-bold text-slate-900"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Roles & Details</label>
+                    <textarea
+                      required
+                      value={newJob.roles}
+                      onChange={e => setNewJob({ ...newJob, roles: e.target.value })}
+                      placeholder="Software Development Engineer, UI/UX Design Internships..."
+                      className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-4 focus:ring-[#0D2B1D]/5 transition-all font-bold text-slate-900 min-h-[120px]"
+                    />
+                  </div>
+                  <button type="submit" className="w-full py-5 rounded-2xl bg-[#0D2B1D] text-white font-bold text-sm shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest">
+                    Submit Posting
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -176,9 +287,9 @@ export default function Placements() {
           {/* ── Top 2 Cards ── */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
 
-            {/* AI Lead Discovery / Faculty Insights */}
-            <div className={`${role === 'teacher' ? 'ios-card' : 'bg-[#0D2B1D]'} rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group`}>
-              {role === 'teacher' ? (
+            {/* AI Lead Discovery / Faculty & Recruiter Insights */}
+            <div className={`${role === 'teacher' || role === 'recruiter' ? 'ios-card' : 'bg-[#0D2B1D]'} rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group`}>
+              {role === 'teacher' || role === 'recruiter' ? (
                 <>
                   <div className="absolute top-0 right-0 p-8 opacity-10">
                     <TrendingUp className="h-32 w-32 text-primary" />
@@ -187,10 +298,12 @@ export default function Placements() {
                     <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                       <TrendingUp className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900">Batch Placement Insight</h3>
+                    <h3 className="text-xl font-bold text-slate-900">{role === 'recruiter' ? 'Recruitment Feedback' : 'Batch Placement Insight'}</h3>
                   </div>
                   <p className="text-sm text-slate-500 mb-8 max-w-sm italic leading-relaxed">
-                    "Analyzing collective batch performance against 2026 hiring benchmarks. Current trends indicate a high matching probability for Product roles."
+                    {role === 'recruiter'
+                      ? '"Your recent postings are receiving high engagement from qualified final-year students with strong technical backgrounds."'
+                      : '"Analyzing collective batch performance against 2026 hiring benchmarks. Current trends indicate a high matching probability for Product roles."'}
                   </p>
                   <div className="grid grid-cols-2 gap-4 w-full">
                     <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
@@ -212,10 +325,12 @@ export default function Placements() {
                     <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center">
                       <Bot className="h-6 w-6 text-emerald-400" />
                     </div>
-                    <h3 className="text-xl font-bold">Neural Discovery Engine</h3>
+                    <h3 className="text-xl font-bold">{role === 'recruiter' ? 'Talent Matchmaking' : 'Neural Discovery Engine'}</h3>
                   </div>
                   <p className="text-sm text-emerald-100/60 mb-8 max-w-sm italic leading-relaxed">
-                    "Scanning global tech ecosystems for 2026 graduate openings. Cross-referencing requirements with your profile context."
+                    {role === 'recruiter'
+                      ? '"Cross-referencing your job requirements with student profiles to identify top 1% candidates in real-time."'
+                      : '"Scanning global tech ecosystems for 2026 graduate openings. Cross-referencing requirements with your profile context."'}
                   </p>
 
                   <button
@@ -231,7 +346,7 @@ export default function Placements() {
                       {discoveryResults.map((res, i) => (
                         <div key={i} className="bg-white/5 rounded-[1.5rem] p-4 border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl flex items-center justify-center font-bold text-xs"
+                            <div className="h-10 w-10 rounded-xl flex items-center justify-center font-bold text-white text-xs"
                               style={{ background: (CATEGORY_COLORS[res.category] || "#34C759") + "30", color: CATEGORY_COLORS[res.category] || "#34C759" }}>
                               {res.logo}
                             </div>
@@ -250,9 +365,9 @@ export default function Placements() {
             </div>
 
             {/* Readiness Radar / Master Stats */}
-            <div className={`ios-card p-10 flex flex-col items-center ${role === 'teacher' ? 'bg-[#1C1C1E] text-white' : ''}`}>
-              <h3 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 mb-8 self-start ${role === 'teacher' ? 'text-emerald-400' : 'text-slate-400'}`}>
-                <Target className="h-4 w-4" /> {role === 'teacher' ? 'Batch Readiness Radar' : 'Career Readiness'}
+            <div className={`ios-card p-10 flex flex-col items-center ${role === 'teacher' || role === 'recruiter' ? 'bg-[#1C1C1E] text-white' : ''}`}>
+              <h3 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 mb-8 self-start ${role === 'teacher' || role === 'recruiter' ? 'text-emerald-400' : 'text-slate-400'}`}>
+                <Target className="h-4 w-4" /> {role === 'teacher' ? 'Batch Readiness Radar' : role === 'recruiter' ? 'Talent Pipeline Radar' : 'Career Readiness'}
               </h3>
               <div className="w-full">
                 <ResponsiveContainer width="100%" height={220}>
@@ -264,13 +379,13 @@ export default function Placements() {
                 </ResponsiveContainer>
               </div>
               <div className="grid grid-cols-2 gap-4 w-full mt-8">
-                <div className={`p-4 rounded-2xl border text-center ${role === 'teacher' ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className="text-[10px] uppercase font-bold opacity-60 mb-1">{role === 'teacher' ? 'Placement Rate' : 'Success Prob.'}</p>
-                  <p className={`text-2xl font-bold ${role === 'teacher' ? 'text-white' : 'text-slate-900'}`}>{role === 'teacher' ? '98%' : `${readiness.placement}%`}</p>
+                <div className={`p-4 rounded-2xl border text-center ${role === 'teacher' || role === 'recruiter' ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                  <p className="text-[10px] uppercase font-bold opacity-60 mb-1">{role === 'teacher' || role === 'recruiter' ? 'Success Rate' : 'Success Prob.'}</p>
+                  <p className={`text-2xl font-bold ${role === 'teacher' || role === 'recruiter' ? 'text-white' : 'text-slate-900'}`}>{role === 'teacher' ? '98%' : role === 'recruiter' ? '94%' : `${readiness.placement}%`}</p>
                 </div>
-                <div className={`p-4 rounded-2xl border text-center ${role === 'teacher' ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className="text-[10px] uppercase font-bold opacity-60 mb-1">{role === 'teacher' ? 'Active Offers' : 'ATS Match'}</p>
-                  <p className="text-2xl font-bold text-emerald-500">{role === 'teacher' ? '142' : `${readiness.resume}%`}</p>
+                <div className={`p-4 rounded-2xl border text-center ${role === 'teacher' || role === 'recruiter' ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                  <p className="text-[10px] uppercase font-bold opacity-60 mb-1">{role === 'teacher' ? 'Active Offers' : role === 'recruiter' ? 'Live Apps' : 'ATS Match'}</p>
+                  <p className="text-2xl font-bold text-emerald-500">{role === 'teacher' ? '142' : role === 'recruiter' ? '28+' : `${readiness.resume}%`}</p>
                 </div>
               </div>
             </div>

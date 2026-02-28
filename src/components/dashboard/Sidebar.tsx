@@ -29,16 +29,22 @@ export function Sidebar() {
       { icon: CheckSquare, label: "Attendance Control", path: "/resources" },
       { icon: BarChart3, label: "Batch Analytics", path: "/analytics" },
     ]
-    : [
-      { icon: LayoutDashboard, label: "Student Dashboard", path: "/dashboard" },
-      { icon: BookOpen, label: "Academic Vault", path: "/academics" },
-      { icon: Briefcase, label: "Placement Hub", path: "/placements" },
-      { icon: FolderOpen, label: "Project Vault", path: "/projects" },
-      { icon: BarChart3, label: "Growth Analytics", path: "/analytics" },
-      { icon: FolderOpen, label: "Study Resources", path: "/resources" },
-      { icon: Bot, label: "AI Copilot", path: "/ai-copilot" },
-      { icon: FileSearch, label: "ATS Checker", path: "/resume-checker" },
-    ];
+    : role === "recruiter"
+      ? [
+        { icon: LayoutDashboard, label: "Recruiter Dashboard", path: "/dashboard" },
+        { icon: Briefcase, label: "Placement Hub", path: "/placements" },
+        { icon: BarChart3, label: "Talent Analytics", path: "/analytics" },
+      ]
+      : [
+        { icon: LayoutDashboard, label: "Student Dashboard", path: "/dashboard" },
+        { icon: BookOpen, label: "Academic Vault", path: "/academics" },
+        { icon: Briefcase, label: "Placement Hub", path: "/placements" },
+        { icon: FolderOpen, label: "Project Vault", path: "/projects" },
+        { icon: BarChart3, label: "Growth Analytics", path: "/analytics" },
+        { icon: FolderOpen, label: "Study Resources", path: "/resources" },
+        { icon: Bot, label: "AI Copilot", path: "/ai-copilot" },
+        { icon: FileSearch, label: "ATS Checker", path: "/resume-checker" },
+      ];
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-card px-4 py-6">
